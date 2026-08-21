@@ -16,28 +16,41 @@ def clean_speech_text(text: str) -> str:
 
     # 2. Strip parenthetical stage directions like *(Waits for reply...)* or [smiles]
     text = re.sub(r'\*\(.*?\)\*', '', text, flags=re.DOTALL)
-    text = re.sub(r'\([^\)]*(?:waits?|pause|smile|laugh|nod|speaks?|reply)[^\)]*\)', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\([^\)]*(?:waits?|pause|smile|laugh|nod|speaks?|reply|ends with)[^\)]*\)', '', text, flags=re.IGNORECASE)
     text = re.sub(r'\[[^\]]*(?:waits?|pause|smile|laugh|nod|speaks?|reply)[^\]]*\]', '', text, flags=re.IGNORECASE)
 
-    # 3. If there is a "Thinking Process" / "We need to..." / "The user..." block at the beginning, extract the actual spoken response
-    if re.search(r'^(?:thinking process|thought process|internal monologue|analysis|we need to|the user wants|the user says|the tutor should)[:\n\s]', text, flags=re.IGNORECASE):
-        quotes = re.findall(r'["“]([^"”]{8,350})["”]', text)
-        if quotes:
-            text = quotes[-1].strip()
+    # 3. If the entire text is wrapped in quotes, strip them first so nested quotes don't invert
+    text = text.strip().strip('"\'“”')
+
+    # 4. If there is an explicit "Alex:", "Response:", "Final Answer:", "Reply:", "I'll ask:", take what follows the LAST one!
+    marker_matches = list(re.finditer(r'(?:final answer|response|reply|alex|spoken output|i\'ll ask|i will ask|i can say|so i\'ll output):\s*', text, flags=re.IGNORECASE))
+    if marker_matches:
+        last_match = marker_matches[-1]
+        text = text[last_match.end():].strip()
+
+    # 5. Check if text contains teacher/methodology meta analysis
+    meta_keywords = [
+        "the student", "the user", "this seems like", "they might be", 
+        "i should take the lead", "since they're unsure", "we need to", 
+        "the tutor should", "thinking process", "thought process", 
+        "analysis", "must not break", "permission to start", "initiate the conversation"
+    ]
+    if any(k in text.lower() for k in meta_keywords):
+        # Look for dialogue sentences in quotes that do NOT contain meta keywords
+        all_quotes = re.findall(r'["“]([^"”]{6,350})["”]', text)
+        clean_quotes = [q for q in all_quotes if not any(k in q.lower() for k in meta_keywords)]
+        if clean_quotes:
+            text = clean_quotes[-1].strip()
         else:
-            parts = re.split(r'\n\s*\n', text)
-            non_thinking = [p.strip() for p in parts if not re.search(r'^(?:thinking|thought|analyze|user input|goal|strategy|rule \d|\d+\.|\*|-|we need|the user|the tutor)', p.strip(), re.IGNORECASE)]
-            if non_thinking:
-                text = " ".join(non_thinking)
-            elif len(parts) > 1:
-                text = parts[-1]
+            # If no clean quotes exist, strip all sentences containing meta keywords
+            sentences = re.split(r'(?<=[.!?])\s+', text)
+            clean_sentences = [s for s in sentences if not any(k in s.lower() for k in meta_keywords) and len(s.strip()) > 5]
+            if clean_sentences:
+                text = " ".join(clean_sentences).strip()
+            else:
+                text = "No worries at all! How about you tell me about what you like to do on weekends, or your favorite hobbies?"
 
-    # 4. If there's an explicit "Response:", "Final Answer:", "Reply:", or "Alex:" marker, take the text AFTER it
-    marker_match = re.search(r'(?:final answer|response|reply|alex|spoken output):\s*(.*)', text, flags=re.DOTALL | re.IGNORECASE)
-    if marker_match:
-        text = marker_match.group(1).strip()
-
-    # 5. Strip preambles
+    # 6. Strip preambles
     for _ in range(4):
         text = re.sub(
             r'^(?:I need to|I should|As an AI|As Alex|Let me|Okay,? let me|My response is|The user is asking|Here is my reply|Alex:)\s*[:\.\n\-]?\s*',
@@ -46,22 +59,21 @@ def clean_speech_text(text: str) -> str:
             flags=re.IGNORECASE
         ).strip()
 
-    # 6. Strip trailing meta-commentary
-    text = re.sub(r"(?:That's \d|Now I will|This is a friendly|My response should|So I'll output|Must not break|Actually let's).*", '', text, flags=re.DOTALL | re.IGNORECASE).strip()
+    # 7. Strip trailing meta-commentary
+    text = re.sub(r"(?:That's \d|Now I will|This is a friendly|My response should|So I'll output|Must not break|Actually let's|Since they're unsure).*", '', text, flags=re.DOTALL | re.IGNORECASE).strip()
 
-    # 7. Strip markdown and emojis
+    # 8. Strip markdown and emojis
     text = re.sub(r'[\*#`_~]', '', text)
     text = re.sub(r'[\U00010000-\U0010ffff]', '', text)
 
-    # 8. Strip bullet point lists
+    # 9. Strip bullet point lists
     lines = [l.strip() for l in text.split('\n') if l.strip()]
     spoken_lines = [l for l in lines if not l.startswith(('-', '*', '•', '1.', '2.', '3.', '4.'))]
     if spoken_lines:
         text = ' '.join(spoken_lines)
 
-    # 9. Strip surrounding quotes
-    if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
-        text = text[1:-1].strip()
+    # 10. Final strip surrounding quotes
+    text = text.strip().strip('"\'“”')
 
     return text.strip()
 

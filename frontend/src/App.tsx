@@ -51,8 +51,8 @@ export function App() {
       <div className="relative z-10 flex flex-col items-center justify-center my-auto w-full max-w-md">
         <div 
           onClick={callState === 'speaking' ? interruptTutor : undefined}
-          title={callState === 'speaking' ? 'Нажмите, чтобы перебить' : undefined}
-          className={`relative mb-6 ${callState === 'speaking' ? 'cursor-pointer transition-transform hover:scale-105 active:scale-95' : ''}`}
+          title={callState === 'speaking' ? 'Нажмите на сферу, чтобы перебить' : undefined}
+          className={`relative mb-6 flex flex-col items-center ${callState === 'speaking' ? 'cursor-pointer transition-transform hover:scale-105 active:scale-95' : ''}`}
         >
           <VoiceVisualizer
             state={callState === 'connecting' ? 'thinking' : callState}
@@ -76,7 +76,7 @@ export function App() {
               {callState === 'connecting' && 'Соединение...'}
               {callState === 'listening' && 'Слушаю вас...'}
               {callState === 'thinking' && 'Обдумываю ответ...'}
-              {callState === 'speaking' && 'Alex говорит (нажмите или скажите, чтобы перебить)'}
+              {callState === 'speaking' && 'Alex говорит (нажмите на сферу, чтобы перебить)'}
             </div>
           </div>
         </div>

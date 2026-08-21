@@ -12,44 +12,50 @@ def clean_speech_text(text: str) -> str:
         return ""
 
     # 1. Strip XML-like thinking tags
-    text = re.sub(r'<(think|thought|reasoning|internal)>.*?</>', '', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'<(think|thought|reasoning|internal)>.*?</\1>', '', text, flags=re.DOTALL | re.IGNORECASE)
 
-    # 2. If there's an explicit "Response:", "Final Answer:", "Reply:", or "Alex:" marker, take the text AFTER it
+    # 2. If there is a quoted speech at the start followed by rambling, take just the quoted speech
+    quoted_match = re.search(r'^\s*["“]([^"”]{8,350})["”]', text, flags=re.DOTALL)
+    if quoted_match:
+        text = quoted_match.group(1).strip()
+
+    # 3. If there's an explicit "Response:", "Final Answer:", "Reply:", or "Alex:" marker, take the text AFTER it
     marker_match = re.search(r'(?:final answer|response|reply|alex|spoken output):\s*(.*)', text, flags=re.DOTALL | re.IGNORECASE)
     if marker_match:
         text = marker_match.group(1).strip()
 
-    # 3. If there is a "Thinking Process" block at the beginning, strip it
-    if re.search(r'(?:thinking process|thought process|internal monologue|analysis)[:
-]', text, flags=re.IGNORECASE):
-        parts = re.split(r'\n\s*\n', text)
+    # 4. If there is a "Thinking Process" block at the beginning, strip it
+    if 'thinking process' in text.lower() or 'thought process' in text.lower() or 'internal monologue' in text.lower():
+        parts = text.split('\n\n')
         non_thinking = [p.strip() for p in parts if not re.search(r'^(?:thinking|thought|analyze|user input|goal|strategy|rule \d|\d+\.|\*|-)', p.strip(), re.IGNORECASE)]
         if non_thinking:
-            text = " ".join(non_thinking)
+            text = ' '.join(non_thinking)
         elif len(parts) > 1:
             text = parts[-1]
 
-    # 4. Strip preambles like "I need to answer...", "I should say...", "As Alex..."
+    # 5. Strip preambles
     for _ in range(4):
         text = re.sub(
-            r'^(?:I need to|I should|As an AI|As Alex|Let me|Okay,? let me|My response is|The user is asking|Here is my reply|Alex:)\s*[:\.
-\-]?\s*',
+            r'^(?:I need to|I should|As an AI|As Alex|Let me|Okay,? let me|My response is|The user is asking|Here is my reply|Alex:)\s*[:\.\n\-]?\s*',
             '',
             text,
             flags=re.IGNORECASE
         ).strip()
 
-    # 5. Strip markdown symbols, asterisks, hashtags, backticks, emojis
+    # 6. Strip trailing meta-commentary
+    text = re.sub(r'(?:That\'s \d|Now I will|This is a friendly|My response should|So I\'ll output).*', '', text, flags=re.DOTALL | re.IGNORECASE).strip()
+
+    # 7. Strip markdown and emojis
     text = re.sub(r'[\*#`_~]', '', text)
-    text = re.sub(r'[𐀀-􏿿]', '', text)
+    text = re.sub(r'[\U00010000-\U0010ffff]', '', text)
 
-    # 6. Strip bullet point lists to keep it strictly spoken conversation
-    lines = [l.strip() for l in text.split("\n") if l.strip()]
-    spoken_lines = [l for l in lines if not l.startswith(("-", "*", "•", "1.", "2.", "3.", "4."))]
+    # 8. Strip bullet point lists
+    lines = [l.strip() for l in text.split('\n') if l.strip()]
+    spoken_lines = [l for l in lines if not l.startswith(('-', '*', '•', '1.', '2.', '3.', '4.'))]
     if spoken_lines:
-        text = " ".join(spoken_lines)
+        text = ' '.join(spoken_lines)
 
-    # 7. Strip surrounding quotes
+    # 9. Strip surrounding quotes
     if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
         text = text[1:-1].strip()
 

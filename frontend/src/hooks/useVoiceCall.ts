@@ -131,11 +131,12 @@ export function useVoiceCall() {
       const source = audioContextRef.current.createBufferSource();
       source.buffer = audioBuffer;
 
+      // Play tutor audio directly through speakers
+      source.connect(audioContextRef.current.destination);
+
+      // Route to analyser ONLY for visualizer waves (never connect analyser to destination to prevent mic loopback echo!)
       if (analyserRef.current) {
         source.connect(analyserRef.current);
-        analyserRef.current.connect(audioContextRef.current.destination);
-      } else {
-        source.connect(audioContextRef.current.destination);
       }
 
       // When tutor finishes speaking:

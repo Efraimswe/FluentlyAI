@@ -10,37 +10,49 @@ def clean_speech_text(text: str) -> str:
     """Aggressively strip any meta-talk, thinking tags, or preamble."""
     if not text:
         return ""
-    
-    # 1. Strip <think> tags
-    text = re.sub(r'<(think|thought|reasoning)>.*?</\1>', '', text, flags=re.DOTALL)
-    
-    # 2. Strip thinking process text blocks
-    if re.search(r'thinking process|analyze user|identify context', text, re.IGNORECASE):
-        lines = [l.strip() for l in text.split("\n") if l.strip()]
-        clean_lines = [
-            l for l in lines
-            if not re.search(r'^(okay,? the user|let me check|rule \d|thinking|analyze|identify|\d+\.|\*|-|#)', l, re.IGNORECASE)
-            and len(l) > 3
-        ]
-        if clean_lines:
-            text = " ".join(clean_lines)
 
-    # 3. Strip preambles
+    # 1. Strip XML-like thinking tags
+    text = re.sub(r'<(think|thought|reasoning|internal)>.*?</>', '', text, flags=re.DOTALL | re.IGNORECASE)
+
+    # 2. If there's an explicit "Response:", "Final Answer:", "Reply:", or "Alex:" marker, take the text AFTER it
+    marker_match = re.search(r'(?:final answer|response|reply|alex|spoken output):\s*(.*)', text, flags=re.DOTALL | re.IGNORECASE)
+    if marker_match:
+        text = marker_match.group(1).strip()
+
+    # 3. If there is a "Thinking Process" block at the beginning, strip it
+    if re.search(r'(?:thinking process|thought process|internal monologue|analysis)[:
+]', text, flags=re.IGNORECASE):
+        parts = re.split(r'\n\s*\n', text)
+        non_thinking = [p.strip() for p in parts if not re.search(r'^(?:thinking|thought|analyze|user input|goal|strategy|rule \d|\d+\.|\*|-)', p.strip(), re.IGNORECASE)]
+        if non_thinking:
+            text = " ".join(non_thinking)
+        elif len(parts) > 1:
+            text = parts[-1]
+
+    # 4. Strip preambles like "I need to answer...", "I should say...", "As Alex..."
     for _ in range(4):
         text = re.sub(
-            r'^(I need to|I should|As an AI|As Alex|Let me|Okay,? let me|My response is|The user is asking|Here is my reply|Response:|Alex:).*?[:\.\n]\s*',
+            r'^(?:I need to|I should|As an AI|As Alex|Let me|Okay,? let me|My response is|The user is asking|Here is my reply|Alex:)\s*[:\.
+\-]?\s*',
             '',
             text,
             flags=re.IGNORECASE
         ).strip()
 
-    # 4. Strip markdown symbols and emojis
-    text = text.replace("*", "").replace("#", "").replace("`", "").replace("😊", "").replace("👋", "").replace("🌟", "").strip()
-    
-    # 5. Strip surrounding quotes
+    # 5. Strip markdown symbols, asterisks, hashtags, backticks, emojis
+    text = re.sub(r'[\*#`_~]', '', text)
+    text = re.sub(r'[𐀀-􏿿]', '', text)
+
+    # 6. Strip bullet point lists to keep it strictly spoken conversation
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    spoken_lines = [l for l in lines if not l.startswith(("-", "*", "•", "1.", "2.", "3.", "4."))]
+    if spoken_lines:
+        text = " ".join(spoken_lines)
+
+    # 7. Strip surrounding quotes
     if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
         text = text[1:-1].strip()
-        
+
     return text.strip()
 
 class LLMClient:

@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2026-08-21T17:22:00Z",
+    "type": "PROJECT_INIT",
+    "title": "Инициализация Уровня 2: Scenarios Hub & Post-Call AI Analytics",
+    "details": "Создана спецификация level_2_spec.md на базе master_functional.md (разделы 3.2 и 4.3). Сформирован пул из 6 тасок и 12 атомарных микро-шагов в tasks_level_2.json: выбор ролевых тем перед звонком и глубокий AI-анализ с разбором ошибок и словарным запасом после звонка."
+  },
+  {
+    "timestamp": "2026-08-21T17:27:06.218552+00:00",
+    "type": "TASK_DONE",
+    "title": "TASK-01: Backend Scenario Prompts & Dynamic Role Selection",
+    "details": "Создан app/scenarios.py с 4 полноценными ролевыми сценариями (Casual, Airport & Customs, Job Interview, Cafe & Restaurant). Обновлен websocket_router.py: теперь принимает scenario_id в start_call и адаптирует стартовое приветствие и характер диалога. Успешно протестировано на всех 4 ролях."
+  },
+  {
+    "timestamp": "2026-08-21T17:31:06.421168+00:00",
+    "type": "TASK_DONE",
+    "title": "TASK-03 & TASK-04: Frontend Scenarios Hub & Dynamic Call Setup",
+    "details": "Созданы типы и данные сценариев (types/index.ts, data/scenarios.ts), компонент ScenarioSelector.tsx с интерактивным выбором карточек тем. useVoiceCall.ts обновлен для передачи выбранного scenario_id в WebSocket. App.tsx интегрирован с переключением между выбором тем и активным звонком."
+  },
+  {
+    "timestamp": "2026-08-21T17:43:52.282955+00:00",
+    "type": "TASK_DONE",
+    "title": "TASK-02 & TASK-05: Post-Call AI Analytics & Interactive Report Screen",
+    "details": "Создан app/analytics.py и эндпоинт POST /api/analyze-call для глубокого структурированного разбора разговора: оценка Fluency Score, разбор грамматики (Как сказал ➔ Как сказать правильнее ➔ Почему), словарный банк с переводом и метрики говорения. Создан компонент PostCallReport.tsx и бесшовный флоу перехода после завершения звонка в App.tsx."
+  }
+]

@@ -1,0 +1,176 @@
+{
+  "version": "1.0.0",
+  "project_name": "FluentlyAI",
+  "current_level": 2,
+  "level_title": "Level 2: Scenarios Hub & Post-Call AI Analytics",
+  "streak_days": 1,
+  "last_activity_date": "2026-08-21",
+  "progress": {
+    "total_tasks": 6,
+    "completed_tasks": 5,
+    "total_micro_steps": 12,
+    "completed_micro_steps": 9,
+    "percentage": 75
+  },
+  "phases": [
+    {
+      "id": "phase-1",
+      "title": "Phase 1: Backend Scenarios & AI Analyzer Endpoint",
+      "tasks": [
+        {
+          "id": "TASK-01",
+          "title": "Backend Scenario Prompts & Dynamic Role Selection",
+          "status": "done",
+          "deliverables": [
+            "backend/app/scenarios.py",
+            "backend/app/websocket_router.py"
+          ],
+          "micro_steps": [
+            {
+              "id": "STEP-01",
+              "title": "Создать app/scenarios.py с 4 ролевыми промптами (Casual, Airport, Job Interview, Cafe)",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "STEP-02",
+              "title": "Обновить websocket_router.py для приема scenario_id в сообщении start_call",
+              "est_minutes": 4,
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "TASK-02",
+          "title": "Backend AI Feedback Endpoint (/api/analyze-call)",
+          "status": "done",
+          "deliverables": [
+            "backend/app/analytics.py",
+            "backend/app/main.py"
+          ],
+          "micro_steps": [
+            {
+              "id": "STEP-03",
+              "title": "Реализовать функцию генерации AI-разбора сессии в app/analytics.py",
+              "est_minutes": 6,
+              "status": "done"
+            },
+            {
+              "id": "STEP-04",
+              "title": "Добавить FastAPI эндпоинт POST /api/analyze-call в main.py",
+              "est_minutes": 4,
+              "status": "done"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "title": "Phase 2: Frontend Scenarios Hub & Dynamic Call Setup",
+      "tasks": [
+        {
+          "id": "TASK-03",
+          "title": "UI выбора сценариев (ScenarioSelector)",
+          "status": "done",
+          "deliverables": [
+            "frontend/src/components/ScenarioSelector.tsx",
+            "frontend/src/types/index.ts"
+          ],
+          "micro_steps": [
+            {
+              "id": "STEP-05",
+              "title": "Создать компонент карточек сценариев ScenarioSelector.tsx с иконками и описанием",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "STEP-06",
+              "title": "Интегрировать выбор сценария в App.tsx перед началом звонка",
+              "est_minutes": 4,
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "TASK-04",
+          "title": "Передача scenario_id через useVoiceCall в WebSocket",
+          "status": "done",
+          "deliverables": [
+            "frontend/src/hooks/useVoiceCall.ts"
+          ],
+          "micro_steps": [
+            {
+              "id": "STEP-07",
+              "title": "Обновить startCall(scenarioId) в useVoiceCall.ts для отправки { type: 'start_call', scenario }",
+              "est_minutes": 3,
+              "status": "done"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "title": "Phase 3: Frontend Post-Call Report & Analytics Modal",
+      "tasks": [
+        {
+          "id": "TASK-05",
+          "title": "UI Экрана отчета после звонка (PostCallReport)",
+          "status": "done",
+          "deliverables": [
+            "frontend/src/components/PostCallReport.tsx"
+          ],
+          "micro_steps": [
+            {
+              "id": "STEP-08",
+              "title": "Создать компонент PostCallReport.tsx (метрики, разбор ошибок, словарный банк, транскрипт)",
+              "est_minutes": 6,
+              "status": "done"
+            },
+            {
+              "id": "STEP-09",
+              "title": "Подключить вызов POST /api/analyze-call при завершении звонка в App.tsx",
+              "est_minutes": 5,
+              "status": "done"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "title": "Phase 4: End-to-End Тестирование и Релиз на Vercel/Render",
+      "tasks": [
+        {
+          "id": "TASK-06",
+          "title": "Сквозное тестирование и деплой Level 2",
+          "status": "todo",
+          "deliverables": [
+            "quests/history_level_2.json"
+          ],
+          "micro_steps": [
+            {
+              "id": "STEP-10",
+              "title": "Провести локальный сквозной тест: Выбор темы -> Звонок -> Разбор ошибок в UI",
+              "est_minutes": 4,
+              "status": "todo"
+            },
+            {
+              "id": "STEP-11",
+              "title": "Собрать и запушить изменения в GitHub для автодеплоя на Render и Vercel",
+              "est_minutes": 3,
+              "status": "todo"
+            },
+            {
+              "id": "STEP-12",
+              "title": "Зафиксировать закрытие Уровня 2 в history_level_2.json",
+              "est_minutes": 2,
+              "status": "todo"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

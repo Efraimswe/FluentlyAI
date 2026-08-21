@@ -192,7 +192,7 @@ export function useVoiceCall() {
   }, [stopCurrentAudio, pauseRecognition, resumeRecognition]);
 
   // Start Call
-  const startCall = useCallback(async () => {
+  const startCall = useCallback(async (scenarioId: string = 'casual') => {
     try {
       setCallState('connecting');
       setTranscripts([]);
@@ -238,7 +238,7 @@ export function useVoiceCall() {
       ws.onopen = () => {
         console.log('WebSocket connected, sending start_call');
         setCallState('listening');
-        ws.send(JSON.stringify({ type: 'start_call' }));
+        ws.send(JSON.stringify({ type: 'start_call', scenario: scenarioId }));
       };
 
       ws.onmessage = async (event) => {

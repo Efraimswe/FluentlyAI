@@ -90,9 +90,10 @@ class LLMClient:
         default = os.getenv("DEFAULT_MODEL", DEFAULT_MODEL)
         return [default] + [m for m in MODELS if m != default]
 
-    async def get_response(self, conversation_history: List[Dict[str, str]]) -> str:
+    async def get_response(self, conversation_history: List[Dict[str, str]], system_prompt: str = None) -> str:
         recent_history = conversation_history[-6:]
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}] + recent_history
+        prompt_to_use = system_prompt or SYSTEM_PROMPT
+        messages = [{"role": "system", "content": prompt_to_use}] + recent_history
 
         current_key = self.api_key
         if not current_key:

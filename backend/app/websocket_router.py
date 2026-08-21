@@ -2,6 +2,7 @@ import json
 import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from .prompts import GREETING_MESSAGE
+from .scenarios import get_scenario, DEFAULT_SCENARIO_ID
 from .llm_client import llm_client
 from .tts_service import tts_service
 
@@ -13,6 +14,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
     print(">>> New WebSocket client connected to /ws/call")
     conversation_history = []
     active_generation_task = None
+    current_scenario = get_scenario(DEFAULT_SCENARIO_ID)
 
     async def send_json(data: dict):
         try:
@@ -23,7 +25,7 @@ async def websocket_call_endpoint(websocket: WebSocket):
     async def speak_response(text: str):
         nonlocal active_generation_task
         try:
-            print(f">>> Tutor responding: {text}")
+            print(f">>> Tutor ({current_scenario['id']}) responding: {text}")
             await send_json({"type": "status", "state": "speaking"})
             await send_json({"type": "transcript", "speaker": "tutor", "text": text})
             
@@ -49,9 +51,14 @@ async def websocket_call_endpoint(websocket: WebSocket):
             print(f">>> Received WS message: {msg_type}")
 
             if msg_type == "start_call":
+                scenario_id = message.get("scenario") or message.get("scenario_id") or DEFAULT_SCENARIO_ID
+                current_scenario = get_scenario(scenario_id)
+                greeting = current_scenario.get("greeting", GREETING_MESSAGE)
+
+                print(f">>> Starting call with scenario: '{scenario_id}' -> Greeting: '{greeting}'")
                 conversation_history.clear()
-                conversation_history.append({"role": "assistant", "content": GREETING_MESSAGE})
-                active_generation_task = asyncio.create_task(speak_response(GREETING_MESSAGE))
+                conversation_history.append({"role": "assistant", "content": greeting})
+                active_generation_task = asyncio.create_task(speak_response(greeting))
 
             elif msg_type == "user_speech":
                 user_text = message.get("text", "").strip()
@@ -69,7 +76,10 @@ async def websocket_call_endpoint(websocket: WebSocket):
                 await send_json({"type": "transcript", "speaker": "user", "text": user_text})
 
                 async def handle_ai_turn():
-                    reply = await llm_client.get_response(conversation_history)
+                    reply = await llm_client.get_response(
+                        conversation_history,
+                        system_prompt=current_scenario.get("system_prompt")
+                    )
                     conversation_history.append({"role": "assistant", "content": reply})
                     await speak_response(reply)
 

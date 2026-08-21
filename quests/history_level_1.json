@@ -1,0 +1,26 @@
+[
+  {
+    "timestamp": "2026-08-20T20:00:00Z",
+    "type": "PROJECT_INIT",
+    "title": "Level 1 Started",
+    "details": "Старт разработки Voice-Only MVP на FastAPI + React + OpenRouter + Edge-TTS"
+  },
+  {
+    "timestamp": "2026-08-20T23:30:00Z",
+    "type": "TASK_DONE",
+    "title": "Выполнены таски TASK-01 - TASK-12",
+    "details": "Реализована вся архитектура: бэкенд с WebSocket, Edge-TTS синтез речи, AudioContext плеер, Canvas визуализатор и механизм мгновенного перебивания (Barge-in)"
+  },
+  {
+    "timestamp": "2026-08-21T12:30:00Z",
+    "type": "BUG_SOLVED",
+    "title": "Оптимизация задержки Audio WebSocket",
+    "details": "Решена проблема буферизации аудиопотока — разделение речи на короткие фразы и стриминг первого чанка без задержки"
+  },
+  {
+    "timestamp": "2026-08-21T14:35:00Z",
+    "type": "DECOMPOSITION_UPDATED",
+    "title": "Стрик 2 дня: Загрузка задач 1-го уровня",
+    "details": "Разделены файлы задач (tasks_level_1.json) и журнал событий (history_level_1.json)"
+  }
+]

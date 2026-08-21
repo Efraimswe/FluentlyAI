@@ -1,0 +1,463 @@
+{
+  "version": "1.0.0",
+  "project_name": "FluentlyAI",
+  "current_level": 1,
+  "level_title": "Level 1: Voice-Only AI Tutor MVP",
+  "streak_days": 2,
+  "last_activity_date": "2026-08-21",
+  "progress": {
+    "total_tasks": 14,
+    "completed_tasks": 12,
+    "total_micro_steps": 44,
+    "completed_micro_steps": 36,
+    "percentage": 82
+  },
+  "phases": [
+    {
+      "id": "phase-1",
+      "title": "Инициализация и окружение",
+      "tasks": [
+        {
+          "id": "TASK-01",
+          "title": "Инициализация структуры монорепозитория",
+          "status": "done",
+          "deliverables": [
+            "frontend/",
+            "backend/",
+            ".gitignore",
+            "README.md"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-01-STEP-01",
+              "title": "Создать папки frontend/ и backend/",
+              "est_minutes": 3,
+              "status": "done"
+            },
+            {
+              "id": "TASK-01-STEP-02",
+              "title": "Создать корневой .gitignore и базовые конфиги",
+              "est_minutes": 3,
+              "status": "done"
+            },
+            {
+              "id": "TASK-01-STEP-03",
+              "title": "Создать README.md с описанием архитектуры",
+              "est_minutes": 4,
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "TASK-02",
+          "title": "Настройка окружения FastAPI бэкенда",
+          "status": "done",
+          "deliverables": [
+            "backend/requirements.txt",
+            "backend/app/config.py",
+            "backend/app/main.py",
+            "backend/.env"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-02-STEP-01",
+              "title": "Создать backend/requirements.txt со всеми библиотеками",
+              "est_minutes": 4,
+              "status": "done"
+            },
+            {
+              "id": "TASK-02-STEP-02",
+              "title": "Написать модуль настроек backend/app/config.py",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "TASK-02-STEP-03",
+              "title": "Создать базовое приложение FastAPI с CORS в main.py",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "TASK-02-STEP-04",
+              "title": "Создать локальный файл конфигурации backend/.env",
+              "est_minutes": 2,
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "TASK-03",
+          "title": "Инициализация React + Vite фронтенда",
+          "status": "done",
+          "deliverables": [
+            "frontend/package.json",
+            "frontend/vite.config.ts",
+            "frontend/tailwind.config.js",
+            "frontend/src/index.css"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-03-STEP-01",
+              "title": "Развернуть Vite + React + TypeScript проект",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "TASK-03-STEP-02",
+              "title": "Подключить Tailwind CSS и настроить стили index.css",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "TASK-03-STEP-03",
+              "title": "Настроить vite.config.ts и переменные .env",
+              "est_minutes": 3,
+              "status": "done"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "title": "Бэкенд и интеграция с AI Voice Pipeline",
+      "tasks": [
+        {
+          "id": "TASK-04",
+          "title": "Реализация клиента OpenRouter LLM с Fallback-моделями",
+          "status": "done",
+          "deliverables": [
+            "backend/app/llm_client.py"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-04-STEP-01",
+              "title": "Создать асинхронный HTTPX клиент для OpenRouter API",
+              "est_minutes": 6,
+              "status": "done"
+            },
+            {
+              "id": "TASK-04-STEP-02",
+              "title": "Настроить список моделей и параметры генерации",
+              "est_minutes": 4,
+              "status": "done"
+            },
+            {
+              "id": "TASK-04-STEP-03",
+              "title": "Реализовать авто-переключение при rate-limit",
+              "est_minutes": 5,
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "TASK-05",
+          "title": "Настройка системного промпта тьютора (Alex)",
+          "status": "done",
+          "deliverables": [
+            "backend/app/prompts.py"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-05-STEP-01",
+              "title": "Создать backend/app/prompts.py с персоной тьютора Alex",
+              "est_minutes": 4,
+              "status": "done"
+            },
+            {
+              "id": "TASK-05-STEP-02",
+              "title": "Задать правила краткости (1-2 фразы) и живого диалога",
+              "est_minutes": 4,
+              "status": "done"
+            },
+            {
+              "id": "TASK-05-STEP-03",
+              "title": "Добавить шаблон стартового приветствия сессии",
+              "est_minutes": 3,
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "TASK-06",
+          "title": "Разработка WebSocket эндпоинта /ws/call и Edge-TTS",
+          "status": "done",
+          "deliverables": [
+            "backend/app/main.py",
+            "backend/app/websocket_router.py",
+            "backend/app/tts_service.py"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-06-STEP-01",
+              "title": "Реализовать синтез речи в Edge-TTS backend/app/tts_service.py",
+              "est_minutes": 6,
+              "status": "done"
+            },
+            {
+              "id": "TASK-06-STEP-02",
+              "title": "Создать WebSocket-роутер в backend/app/websocket_router.py",
+              "est_minutes": 8,
+              "status": "done"
+            },
+            {
+              "id": "TASK-06-STEP-03",
+              "title": "Реализовать протокол статусов (listening/thinking/speaking/interrupted)",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "TASK-06-STEP-04",
+              "title": "Зарегистрировать WS маршрут в backend/app/main.py",
+              "est_minutes": 2,
+              "status": "done"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "title": "Фронтенд: Web Audio API и UI звонка",
+      "tasks": [
+        {
+          "id": "TASK-07",
+          "title": "Разработка хука захвата аудио (useVoiceCall - Input)",
+          "status": "done",
+          "deliverables": [
+            "frontend/src/hooks/useVoiceCall.ts"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-07-STEP-01",
+              "title": "Реализовать захват микрофона через getUserMedia",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "TASK-07-STEP-02",
+              "title": "Подключить SpeechRecognition для распознавания речи",
+              "est_minutes": 6,
+              "status": "done"
+            },
+            {
+              "id": "TASK-07-STEP-03",
+              "title": "Настроить передачу текстовых реплик по WebSocket",
+              "est_minutes": 4,
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "TASK-08",
+          "title": "Разработка аудио-плеера потокового звука (useVoiceCall - Output)",
+          "status": "done",
+          "deliverables": [
+            "frontend/src/hooks/useVoiceCall.ts"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-08-STEP-01",
+              "title": "Создать AudioContext и декодер base64 аудиочастей",
+              "est_minutes": 6,
+              "status": "done"
+            },
+            {
+              "id": "TASK-08-STEP-02",
+              "title": "Организовать бесшовную очередь воспроизведения",
+              "est_minutes": 6,
+              "status": "done"
+            },
+            {
+              "id": "TASK-08-STEP-03",
+              "title": "Реализовать мгновенную остановку (flush) при сигнале прерывания",
+              "est_minutes": 4,
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "TASK-09",
+          "title": "Компонент анимированного визуализатора голоса (VoiceVisualizer)",
+          "status": "done",
+          "deliverables": [
+            "frontend/src/components/VoiceVisualizer.tsx"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-09-STEP-01",
+              "title": "Создать Canvas-компонент VoiceVisualizer.tsx",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "TASK-09-STEP-02",
+              "title": "Реализовать Canvas-анимацию пульсирующей сферы",
+              "est_minutes": 6,
+              "status": "done"
+            },
+            {
+              "id": "TASK-09-STEP-03",
+              "title": "Подключить анализатор громкости голоса к анимации",
+              "est_minutes": 5,
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "TASK-10",
+          "title": "Единственный экран приложения (App.tsx)",
+          "status": "done",
+          "deliverables": [
+            "frontend/src/App.tsx"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-10-STEP-01",
+              "title": "Собрать верстку главного экрана в App.tsx",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "TASK-10-STEP-02",
+              "title": "Сделать центральную кнопку звонка со сменой состояний",
+              "est_minutes": 4,
+              "status": "done"
+            },
+            {
+              "id": "TASK-10-STEP-03",
+              "title": "Настроить темную тему и адаптивность",
+              "est_minutes": 4,
+              "status": "done"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "title": "Интеграция, Barge-in и оптимизация задержек",
+      "tasks": [
+        {
+          "id": "TASK-11",
+          "title": "Тестирование и тюнинг задержки Voice-to-Voice",
+          "status": "done",
+          "deliverables": [
+            "Integration & Latency Verification"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-11-STEP-01",
+              "title": "Проверить полный пайплайн ответа ИИ в локальном окружении",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "TASK-11-STEP-02",
+              "title": "Оптимизировать размер буферов для мгновенного первого чанка речи",
+              "est_minutes": 5,
+              "status": "done"
+            }
+          ]
+        },
+        {
+          "id": "TASK-12",
+          "title": "Проверка и отладка механизма перебивания (Barge-in)",
+          "status": "done",
+          "deliverables": [
+            "Barge-in Testing & Bugfixes"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-12-STEP-01",
+              "title": "Проверить сброс клиентского аудио при обнаружении речи пользователя",
+              "est_minutes": 5,
+              "status": "done"
+            },
+            {
+              "id": "TASK-12-STEP-02",
+              "title": "Проверить отмену серверной генерации потока через WebSocket",
+              "est_minutes": 4,
+              "status": "done"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-5",
+      "title": "Деплой и Production релиз",
+      "tasks": [
+        {
+          "id": "TASK-13",
+          "title": "Контейнеризация и деплой бэкенда на Render.com",
+          "status": "todo",
+          "deliverables": [
+            "backend/Dockerfile",
+            "backend/render.yaml"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-13-STEP-01",
+              "title": "Инициализировать git и создать репозиторий на GitHub (Skaylet3/FluentlyAI)",
+              "est_minutes": 3,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-13-STEP-02",
+              "title": "Создать backend/Dockerfile для запуска FastAPI и Edge-TTS",
+              "est_minutes": 5,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-13-STEP-03",
+              "title": "Создать backend/render.yaml с конфигурацией веб-сервиса",
+              "est_minutes": 4,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-13-STEP-04",
+              "title": "Задеплоить сервис на Render и прописать OPENROUTER_API_KEY",
+              "est_minutes": 4,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-13-STEP-05",
+              "title": "Проверить доступность wss:// эндпоинта на продакшене",
+              "est_minutes": 5,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-14",
+          "title": "Деплой фронтенда на Vercel",
+          "status": "todo",
+          "deliverables": [
+            "Vercel Live Production URL"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-14-STEP-01",
+              "title": "Подключить репозиторий в Vercel (Root: frontend)",
+              "est_minutes": 4,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-14-STEP-02",
+              "title": "Указать переменную VITE_WS_URL на адрес Render.com",
+              "est_minutes": 3,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-14-STEP-03",
+              "title": "Провести тестовый звонок с телефона на живом Vercel URL",
+              "est_minutes": 5,
+              "status": "todo"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

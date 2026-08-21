@@ -1,0 +1,26 @@
+# Virtual Environment
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Environment Variables
+.env
+backend/.env
+frontend/.env
+*.local
+
+# Logs
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

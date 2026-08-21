@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: fluently-backend
+    runtime: docker
+    plan: free
+    region: oregon
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0

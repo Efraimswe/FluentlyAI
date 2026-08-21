@@ -1,8 +1,9 @@
 import json
 import re
+import os
 import httpx
 from typing import List, Dict
-from .config import OPENROUTER_API_KEY, MODELS
+from .config import OPENROUTER_API_KEY, MODELS, DEFAULT_MODEL
 from .prompts import SYSTEM_PROMPT
 
 def clean_speech_text(text: str) -> str:
@@ -24,7 +25,7 @@ def clean_speech_text(text: str) -> str:
         if clean_lines:
             text = " ".join(clean_lines)
 
-    # 3. Strip preambles like "I need to answer...", "I should say...", "As Alex...", "Response:"
+    # 3. Strip preambles
     for _ in range(4):
         text = re.sub(
             r'^(I need to|I should|As an AI|As Alex|Let me|Okay,? let me|My response is|The user is asking|Here is my reply|Response:|Alex:).*?[:\.\n]\s*',
@@ -44,17 +45,28 @@ def clean_speech_text(text: str) -> str:
 
 class LLMClient:
     def __init__(self):
-        self.api_key = OPENROUTER_API_KEY
         self.url = "https://openrouter.ai/api/v1/chat/completions"
-        self.models = MODELS
+
+    @property
+    def api_key(self) -> str:
+        return os.getenv("OPENROUTER_API_KEY", OPENROUTER_API_KEY)
+
+    @property
+    def models(self) -> List[str]:
+        default = os.getenv("DEFAULT_MODEL", DEFAULT_MODEL)
+        return [default] + [m for m in MODELS if m != default]
 
     async def get_response(self, conversation_history: List[Dict[str, str]]) -> str:
-        # Keep sliding context of last 6 messages to keep context ultra-fresh and fast
         recent_history = conversation_history[-6:]
         messages = [{"role": "system", "content": SYSTEM_PROMPT}] + recent_history
 
+        current_key = self.api_key
+        if not current_key:
+            print(">>> ERROR: OPENROUTER_API_KEY is not set!")
+            return "That sounds really interesting! Could you tell me more about that?"
+
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {current_key}",
             "Content-Type": "application/json",
             "HTTP-Referer": "https://fluently.ai",
             "X-Title": "FluentlyAI Tutor"
@@ -65,10 +77,10 @@ class LLMClient:
                 "model": model,
                 "messages": messages,
                 "temperature": 0.7,
-                "max_tokens": 250
+                "max_tokens": 200
             }
             try:
-                async with httpx.AsyncClient(timeout=9.0) as client:
+                async with httpx.AsyncClient(timeout=8.0) as client:
                     resp = await client.post(self.url, json=payload, headers=headers)
                     if resp.status_code == 200:
                         data = resp.json()
@@ -78,14 +90,11 @@ class LLMClient:
                             if clean_reply and len(clean_reply) > 2:
                                 print(f">>> [Model: {model}] Spoke: {clean_reply}")
                                 return clean_reply
-                    elif resp.status_code == 429:
-                        print(f">>> [Model: {model}] Rate limit (429), trying next...")
-                        continue
                     else:
-                        print(f">>> [Model: {model}] Status: {resp.status_code}")
+                        print(f">>> [Model: {model}] OpenRouter error ({resp.status_code}): {resp.text[:100]}")
                         continue
             except Exception as e:
-                print(f">>> [Model: {model}] Error: {e}")
+                print(f">>> [Model: {model}] Exception: {e}")
                 continue
 
         return "That sounds really interesting! Could you tell me more about that?"

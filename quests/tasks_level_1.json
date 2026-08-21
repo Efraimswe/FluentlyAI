@@ -7,10 +7,10 @@
   "last_activity_date": "2026-08-21",
   "progress": {
     "total_tasks": 14,
-    "completed_tasks": 12,
+    "completed_tasks": 13,
     "total_micro_steps": 44,
-    "completed_micro_steps": 36,
-    "percentage": 82
+    "completed_micro_steps": 41,
+    "percentage": 93
   },
   "phases": [
     {
@@ -391,7 +391,7 @@
         {
           "id": "TASK-13",
           "title": "Контейнеризация и деплой бэкенда на Render.com",
-          "status": "todo",
+          "status": "done",
           "deliverables": [
             "backend/Dockerfile",
             "backend/render.yaml"
@@ -401,31 +401,31 @@
               "id": "TASK-13-STEP-01",
               "title": "Инициализировать git и создать репозиторий на GitHub (Skaylet3/FluentlyAI)",
               "est_minutes": 3,
-              "status": "todo"
+              "status": "done"
             },
             {
               "id": "TASK-13-STEP-02",
               "title": "Создать backend/Dockerfile для запуска FastAPI и Edge-TTS",
               "est_minutes": 5,
-              "status": "todo"
+              "status": "done"
             },
             {
               "id": "TASK-13-STEP-03",
               "title": "Создать backend/render.yaml с конфигурацией веб-сервиса",
               "est_minutes": 4,
-              "status": "todo"
+              "status": "done"
             },
             {
               "id": "TASK-13-STEP-04",
               "title": "Задеплоить сервис на Render и прописать OPENROUTER_API_KEY",
               "est_minutes": 4,
-              "status": "todo"
+              "status": "done"
             },
             {
               "id": "TASK-13-STEP-05",
               "title": "Проверить доступность wss:// эндпоинта на продакшене",
               "est_minutes": 5,
-              "status": "todo"
+              "status": "done"
             }
           ]
         },

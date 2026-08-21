@@ -22,5 +22,11 @@
     "type": "DECOMPOSITION_UPDATED",
     "title": "Стрик 2 дня: Загрузка задач 1-го уровня",
     "details": "Разделены файлы задач (tasks_level_1.json) и журнал событий (history_level_1.json)"
+  },
+  {
+    "timestamp": "2026-08-21T14:03:41.269596+00:00",
+    "type": "TASK_DONE",
+    "title": "TASK-13 Завершена: Бэкенд задеплоен на Render.com",
+    "details": "Создан Dockerfile, GitHub репо Efraimswe/FluentlyAI, развернут живой сервис https://fluently-backend-0psq.onrender.com (wss://.../ws/call)"
   }
 ]

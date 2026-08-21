@@ -9,9 +9,9 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 MODELS: List[str] = [
     "openrouter/free",
     "openai/gpt-oss-20b:free",
-    "google/gemma-4-31b-it:free",
     "liquid/lfm-2.5-2.6b:free",
-    "nvidia/nemotron-3-nano-30b-a3b:free"
+    "google/gemma-4-26b-a4b-it:free",
+    "google/gemma-4-31b-it:free"
 ]
 
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", MODELS[0])

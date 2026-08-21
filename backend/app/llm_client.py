@@ -110,7 +110,7 @@ class LLMClient:
             payload = {
                 "model": model,
                 "messages": messages,
-                "temperature": 0.7,
+                "temperature": 0.85,
                 "max_tokens": 200
             }
             try:

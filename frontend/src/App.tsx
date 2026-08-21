@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Phone, PhoneOff, Sparkles, MessageSquare, Mic } from './components/Icons';
+import { Phone, PhoneOff, Sparkles, MessageSquare } from './components/Icons';
 import { useVoiceCall } from './hooks/useVoiceCall';
 import { VoiceVisualizer } from './components/VoiceVisualizer';
 

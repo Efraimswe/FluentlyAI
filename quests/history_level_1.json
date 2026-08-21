@@ -28,5 +28,17 @@
     "type": "TASK_DONE",
     "title": "TASK-13 Завершена: Бэкенд задеплоен на Render.com",
     "details": "Создан Dockerfile, GitHub репо Efraimswe/FluentlyAI, развернут живой сервис https://fluently-backend-0psq.onrender.com (wss://.../ws/call)"
+  },
+  {
+    "timestamp": "2026-08-21T14:09:04.088484+00:00",
+    "type": "TASK_DONE",
+    "title": "TASK-14 Завершена: Фронтенд задеплоен на Vercel",
+    "details": "Фронтенд собран и развернут на Vercel: https://fluently-ai-efraims-projects-78a6d677.vercel.app, подключен к WebSocket Render.com"
+  },
+  {
+    "timestamp": "2026-08-21T14:09:04.088484+00:00",
+    "type": "LEVEL_COMPLETED",
+    "title": "🎉 УРОВЕНЬ 1 (MVP) ПОЛНОСТЬЮ ЗАВЕРШЁН!",
+    "details": "100% задач и микро-шагов закрыты. Проект FluentlyAI работает в продакшене: бэкенд на Render, фронтенд на Vercel, репозиторий на GitHub."
   }
 ]

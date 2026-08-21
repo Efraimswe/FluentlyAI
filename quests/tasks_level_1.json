@@ -7,10 +7,10 @@
   "last_activity_date": "2026-08-21",
   "progress": {
     "total_tasks": 14,
-    "completed_tasks": 13,
+    "completed_tasks": 14,
     "total_micro_steps": 44,
-    "completed_micro_steps": 41,
-    "percentage": 93
+    "completed_micro_steps": 44,
+    "percentage": 100
   },
   "phases": [
     {
@@ -432,7 +432,7 @@
         {
           "id": "TASK-14",
           "title": "Деплой фронтенда на Vercel",
-          "status": "todo",
+          "status": "done",
           "deliverables": [
             "Vercel Live Production URL"
           ],
@@ -441,19 +441,19 @@
               "id": "TASK-14-STEP-01",
               "title": "Подключить репозиторий в Vercel (Root: frontend)",
               "est_minutes": 4,
-              "status": "todo"
+              "status": "done"
             },
             {
               "id": "TASK-14-STEP-02",
               "title": "Указать переменную VITE_WS_URL на адрес Render.com",
               "est_minutes": 3,
-              "status": "todo"
+              "status": "done"
             },
             {
               "id": "TASK-14-STEP-03",
               "title": "Провести тестовый звонок с телефона на живом Vercel URL",
               "est_minutes": 5,
-              "status": "todo"
+              "status": "done"
             }
           ]
         }

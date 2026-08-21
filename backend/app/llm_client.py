@@ -14,24 +14,28 @@ def clean_speech_text(text: str) -> str:
     # 1. Strip XML-like thinking tags
     text = re.sub(r'<(think|thought|reasoning|internal)>.*?</\1>', '', text, flags=re.DOTALL | re.IGNORECASE)
 
-    # 2. If there is a quoted speech at the start followed by rambling, take just the quoted speech
-    quoted_match = re.search(r'^\s*["“]([^"”]{8,350})["”]', text, flags=re.DOTALL)
-    if quoted_match:
-        text = quoted_match.group(1).strip()
+    # 2. Strip parenthetical stage directions like *(Waits for reply...)* or [smiles]
+    text = re.sub(r'\*\(.*?\)\*', '', text, flags=re.DOTALL)
+    text = re.sub(r'\([^\)]*(?:waits?|pause|smile|laugh|nod|speaks?|reply)[^\)]*\)', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\[[^\]]*(?:waits?|pause|smile|laugh|nod|speaks?|reply)[^\]]*\]', '', text, flags=re.IGNORECASE)
 
-    # 3. If there's an explicit "Response:", "Final Answer:", "Reply:", or "Alex:" marker, take the text AFTER it
+    # 3. If there is a "Thinking Process" / "We need to..." / "The user..." block at the beginning, extract the actual spoken response
+    if re.search(r'^(?:thinking process|thought process|internal monologue|analysis|we need to|the user wants|the user says|the tutor should)[:\n\s]', text, flags=re.IGNORECASE):
+        quotes = re.findall(r'["“]([^"”]{8,350})["”]', text)
+        if quotes:
+            text = quotes[-1].strip()
+        else:
+            parts = re.split(r'\n\s*\n', text)
+            non_thinking = [p.strip() for p in parts if not re.search(r'^(?:thinking|thought|analyze|user input|goal|strategy|rule \d|\d+\.|\*|-|we need|the user|the tutor)', p.strip(), re.IGNORECASE)]
+            if non_thinking:
+                text = " ".join(non_thinking)
+            elif len(parts) > 1:
+                text = parts[-1]
+
+    # 4. If there's an explicit "Response:", "Final Answer:", "Reply:", or "Alex:" marker, take the text AFTER it
     marker_match = re.search(r'(?:final answer|response|reply|alex|spoken output):\s*(.*)', text, flags=re.DOTALL | re.IGNORECASE)
     if marker_match:
         text = marker_match.group(1).strip()
-
-    # 4. If there is a "Thinking Process" block at the beginning, strip it
-    if 'thinking process' in text.lower() or 'thought process' in text.lower() or 'internal monologue' in text.lower():
-        parts = text.split('\n\n')
-        non_thinking = [p.strip() for p in parts if not re.search(r'^(?:thinking|thought|analyze|user input|goal|strategy|rule \d|\d+\.|\*|-)', p.strip(), re.IGNORECASE)]
-        if non_thinking:
-            text = ' '.join(non_thinking)
-        elif len(parts) > 1:
-            text = parts[-1]
 
     # 5. Strip preambles
     for _ in range(4):
@@ -43,7 +47,7 @@ def clean_speech_text(text: str) -> str:
         ).strip()
 
     # 6. Strip trailing meta-commentary
-    text = re.sub(r'(?:That\'s \d|Now I will|This is a friendly|My response should|So I\'ll output).*', '', text, flags=re.DOTALL | re.IGNORECASE).strip()
+    text = re.sub(r"(?:That's \d|Now I will|This is a friendly|My response should|So I'll output|Must not break|Actually let's).*", '', text, flags=re.DOTALL | re.IGNORECASE).strip()
 
     # 7. Strip markdown and emojis
     text = re.sub(r'[\*#`_~]', '', text)

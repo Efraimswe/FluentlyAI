@@ -1,16 +1,17 @@
 import os
-from pathlib import Path
+from typing import List
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+load_dotenv()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 
-MODELS = [
-    "nvidia/nemotron-3-nano-30b-a3b:free",
-    "nvidia/nemotron-nano-9b-v2:free",
-    "cohere/north-mini-code:free"
+MODELS: List[str] = [
+    "openrouter/free",
+    "openai/gpt-oss-20b:free",
+    "google/gemma-4-31b-it:free",
+    "liquid/lfm-2.5-2.6b:free",
+    "nvidia/nemotron-3-nano-30b-a3b:free"
 ]
 
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", MODELS[0])

@@ -7,10 +7,10 @@
   "last_activity_date": "2026-08-21",
   "progress": {
     "total_tasks": 6,
-    "completed_tasks": 5,
+    "completed_tasks": 6,
     "total_micro_steps": 12,
-    "completed_micro_steps": 9,
-    "percentage": 75
+    "completed_micro_steps": 12,
+    "percentage": 100
   },
   "phases": [
     {
@@ -145,7 +145,7 @@
         {
           "id": "TASK-06",
           "title": "Сквозное тестирование и деплой Level 2",
-          "status": "todo",
+          "status": "done",
           "deliverables": [
             "quests/history_level_2.json"
           ],
@@ -154,19 +154,19 @@
               "id": "STEP-10",
               "title": "Провести локальный сквозной тест: Выбор темы -> Звонок -> Разбор ошибок в UI",
               "est_minutes": 4,
-              "status": "todo"
+              "status": "done"
             },
             {
               "id": "STEP-11",
               "title": "Собрать и запушить изменения в GitHub для автодеплоя на Render и Vercel",
               "est_minutes": 3,
-              "status": "todo"
+              "status": "done"
             },
             {
               "id": "STEP-12",
               "title": "Зафиксировать закрытие Уровня 2 в history_level_2.json",
               "est_minutes": 2,
-              "status": "todo"
+              "status": "done"
             }
           ]
         }

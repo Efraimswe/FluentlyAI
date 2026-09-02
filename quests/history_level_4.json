@@ -142,5 +142,11 @@
   "type": "STEP_DONE",
   "title": "TASK-08-STEP-02: гость упирается в 2 (scripts/test_guest_flow.py 10/10), зарегистрированный — в 10 (scripts/test_registered_limit.py ALL PASS: 10-я реплика с прощанием, 11-я блокируется, /api/me used 10 left 0, call/end работает)",
   "details": "STEP-01 (обида со вчера голосом, два звонка) — руками Efraim после деплоя."
+ },
+ {
+  "timestamp": "2026-09-02T21:51:03.041531+00:00",
+  "type": "DEPLOY",
+  "title": "Прод-деплой уровня 4: https://fluently-ai.vercel.app — /api/me гость 2/2, call/start с событием дня из Supabase, приветствие с audio, call/end возвращает похвалу",
+  "details": "Коммит 5ec9263. Env на Vercel: SUPABASE_URL/ANON/SERVICE_KEY, VITE_SUPABASE_URL/ANON. Остался TASK-08-STEP-01 руками (два звонка, обида со вчера) и Publish app в Google consent screen."
  }
 ]

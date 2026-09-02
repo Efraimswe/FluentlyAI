@@ -6,12 +6,16 @@ import { Chat } from '../components/Chat';
 import { LiveInput } from '../components/LiveInput';
 import { CallSummary } from '../components/CallSummary';
 import { AuthModal } from '../components/AuthModal';
-import { LimitModal } from '../components/LimitModal';
+import { Paywall } from './Paywall';
 import { Phone, PhoneOff, ChevronLeft } from '../components/Icons';
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || '';
 
-export function CallScreen() {
+export interface CallScreenProps {
+  navigate(to: string): void;
+}
+
+export function CallScreen({ navigate }: CallScreenProps) {
   const {
     callState,
     audioLevel,
@@ -29,6 +33,7 @@ export function CallScreen() {
     limits,
     limitHit,
     dismissLimit,
+    refreshLimits,
   } = useCall();
   const { user, signOut } = useAuth();
   const [panelOpen, setPanelOpen] = useState(false);
@@ -37,6 +42,15 @@ export function CallScreen() {
   useEffect(() => {
     fetch(`${API_BASE}/api/warmup`).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const onCheckoutSuccess = () => {
+      void refreshLimits();
+      void dismissLimit(true);
+    };
+    window.addEventListener('cc:checkout-success', onCheckoutSuccess);
+    return () => window.removeEventListener('cc:checkout-success', onCheckoutSuccess);
+  }, [refreshLimits, dismissLimit]);
 
   const isIdle = callState === 'idle';
   const screen: 'idle' | 'micError' | 'call' = micError ? 'micError' : isIdle ? 'idle' : 'call';
@@ -94,19 +108,28 @@ export function CallScreen() {
         </div>
       </div>
 
-      <div className="absolute top-3 left-3 z-10 text-xs opacity-60 flex items-center gap-2">
-        {user ? (
-          <>
-            <span>{user.email}</span>
-            <button type="button" onClick={() => void signOut()} className="underline cursor-pointer">
-              Выйти
-            </button>
-          </>
-        ) : (
-          <button type="button" onClick={() => setManualAuthOpen(true)} className="underline cursor-pointer">
-            Войти
+      <div className="absolute top-3 left-3 z-10 text-xs opacity-60 flex flex-col items-start gap-1">
+        {isIdle ? (
+          <button type="button" onClick={() => navigate('/')} className="underline cursor-pointer">
+            ← Главная
           </button>
-        )}
+        ) : null}
+        <div className="flex items-center gap-2">
+          {user ? (
+            <>
+              <button type="button" onClick={() => navigate('/account')} className="underline cursor-pointer">
+                {user.email}
+              </button>
+              <button type="button" onClick={() => void signOut()} className="underline cursor-pointer">
+                Выйти
+              </button>
+            </>
+          ) : (
+            <button type="button" onClick={() => setManualAuthOpen(true)} className="underline cursor-pointer">
+              Войти
+            </button>
+          )}
+        </div>
       </div>
 
       {screen === 'idle' ? (
@@ -207,7 +230,9 @@ export function CallScreen() {
             }}
           />
         ) : (
-          <LimitModal
+          <Paywall
+            open
+            status={limitHit.status}
             period={limits?.period ?? null}
             onClose={() => {
               dismissLimit();

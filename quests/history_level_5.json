@@ -1,8 +1,56 @@
 [
-  {
-    "timestamp": "2026-08-28T17:17:13.087661Z",
-    "type": "PROJECT_INIT",
-    "title": "Инициализация Уровня 5: Level 5: Charlie Calls в проде — подписка, лендинг, домен, mobile-полиш",
-    "details": "Сгенерировано из master_functional.md v1 + master_technical.md v1. Тасок: 8, микро-шагов: 14."
-  }
+ {
+  "timestamp": "2026-08-28T17:17:13.087661Z",
+  "type": "PROJECT_INIT",
+  "title": "Инициализация Уровня 5: Level 5: Charlie Calls в проде — подписка, лендинг, домен, mobile-полиш",
+  "details": "Сгенерировано из master_functional.md v1 + master_technical.md v1. Тасок: 8, микро-шагов: 14."
+ },
+ {
+  "timestamp": "2026-09-02T22:25:46.670831+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-01-STEP-01: Lemon Squeezy — магазин Charlie Calls (store 462173, EUR, test mode), продукт «Charlie Calls Monthly» €9.99/мес, trial 3 дня (variant 2085975); API-ключ, store/variant id и webhook secret в .env и на Vercel",
+  "details": "Продукт создал Efraim в дашборде. Вебхук 131453 создан через API → https://fluently-ai.vercel.app/api/webhooks/lemonsqueezy (subscription_* события). Секрет ≤ 40 символов — LS ограничение."
+ },
+ {
+  "timestamp": "2026-09-02T22:25:46.670831+00:00",
+  "type": "DECISION",
+  "title": "TASK-05-STEP-01 (домен charliecalls.com) пропущен по решению Efraim — пока живём на fluently-ai.vercel.app",
+  "details": "Следствие: Google OAuth остаётся в Testing (нужны homepage/privacy на authorised domain), вход через Google — только Test users. Магазин LS на активацию тоже удобнее с доменом."
+ },
+ {
+  "timestamp": "2026-09-02T22:33:24.827775+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-01-STEP-02: app/payments.py — POST /api/checkout (LS checkout с custom[user_id], embed, redirect ?checkout=success), GET /api/subscription; фронт src/payments/checkout.ts (Lemon.js overlay, фолбэк на редирект) + screens/Paywall.tsx («10 бесплатных закончились» → «Попробовать 3 дня»; для триала/подписки — «На сегодня всё»)",
+  "details": "LimitModal.tsx больше не используется."
+ },
+ {
+  "timestamp": "2026-09-02T22:33:24.827775+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-02-STEP-01: app/webhooks.py — POST /api/webhooks/lemonsqueezy, HMAC-SHA256 X-Signature, события created/updated/resumed/payment_success/cancelled/expired/payment_failed → subscriptions (по ls_subscription_id) + users.status (on_trial→trial, active/past_due→subscriber, cancelled держит subscriber до expired, expired→registered); /api/me отдаёт subscription с customer_portal_url",
+  "details": "scripts/test_payments.py ALL PASS на синтетических вебхуках с подписью. STEP-02 (реальная карта 4242 в test mode) — руками Efraim."
+ },
+ {
+  "timestamp": "2026-09-02T22:33:24.827775+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-03-STEP-01: screens/Account.tsx — email, подписка по статусу (Бесплатно / Пробный до … / Активна, продление …), «Управлять подпиской» → customer portal, «Выйти», ?checkout=success → «Подписка оформлена»; остатка сообщений нет",
+  "details": ""
+ },
+ {
+  "timestamp": "2026-09-02T22:33:24.827775+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-04-STEP-01: screens/Landing.tsx (mobile first) — «Чарли — бармен из Остина. Ему можно позвонить.», 3 его реплики с цветом эмоции, «Как это работает» 3 шага, цена, «Позвонить Чарли» → /call с прогревом; src/router.ts (pathname + pushState), vercel.json SPA-rewrite",
+  "details": "Тексты по скиллу human-copy: без триад, без восклицаний, конкретика."
+ },
+ {
+  "timestamp": "2026-09-02T22:33:24.827775+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-04-STEP-02: index.html — description, OG (og.svg 1200×630), twitter:card, theme-color, favicon.svg (орб), apple-touch-icon; public/privacy.html (EN) для Google consent screen",
+  "details": "favicon.svg перезаписан — старый логотип FluentlyAI убран."
+ },
+ {
+  "timestamp": "2026-09-02T22:33:24.827775+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-07-STEP-01: прогон по 10 эвристикам Нильсена на 4 экранах (лендинг, звонок, пейволл, аккаунт). Находки: (1) после оплаты посреди звонка микрофон остаётся выключенным — dismissLimit не возобновлял; (2) после Google-входа редирект на лендинг, а не в звонок; (3) кнопка оплаты без состояния «открываю»; (4) «← Лендинг» — слово не для юзера, → «← Главная»; (5) падение Deepgram при старте давало общее «Сервер недоступен». Не критично, оставлено: два экрана с кнопкой «Позвонить» подряд (по спеке + iOS tap), шеврон еле заметен (по спеке), нет подтверждения на «Положить трубку»",
+  "details": ""
+ }
 ]

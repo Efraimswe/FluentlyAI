@@ -5,6 +5,8 @@ from .turn import router as turn_router
 from .deepgram_token import router as deepgram_router
 from .postcall import router as postcall_router
 from .limits import router as limits_router
+from .payments import router as payments_router
+from .webhooks import router as webhooks_router
 
 app = FastAPI(title="FluentlyAI API", version="3.0.0")
 
@@ -20,6 +22,8 @@ app.include_router(turn_router)
 app.include_router(deepgram_router)
 app.include_router(postcall_router)
 app.include_router(limits_router)
+app.include_router(payments_router)
+app.include_router(webhooks_router)
 
 @app.get("/health")
 async def health_check():

@@ -10,6 +10,7 @@ from fastapi import APIRouter, Header
 from . import config  # noqa: F401  (ensures load_dotenv() has run)
 from .auth import get_user_id
 from .db import db
+from .subs import get_subscription_info
 
 router = APIRouter()
 
@@ -209,6 +210,7 @@ async def me(
     info = await get_limit_info(user_id, x_fingerprint, x_timezone)
 
     user = None
+    subscription = None
     if user_id is not None:
         email = None
         try:
@@ -219,6 +221,12 @@ async def me(
             print(f"[limits] fetching user email failed: {exc!r}")
         user = {"id": user_id, "email": email}
 
+        try:
+            subscription = (await get_subscription_info(user_id))["subscription"]
+        except Exception as exc:
+            print(f"[limits] fetching subscription info failed: {exc!r}")
+            subscription = None
+
     return {
         "status": info.status,
         "limits": {
@@ -228,5 +236,5 @@ async def me(
             "period": info.period,
         },
         "user": user,
-        "subscription": None,
+        "subscription": subscription,
     }

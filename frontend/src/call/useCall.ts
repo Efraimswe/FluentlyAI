@@ -157,20 +157,23 @@ export function useCall() {
     };
   }, []);
 
-  const refreshLimits = useCallback(async () => {
+  const refreshLimits = useCallback(async (): Promise<Limits | null> => {
     try {
       const headers = await apiHeaders();
       const res = await fetch(`${API_BASE}/api/me`, { headers });
-      if (!res.ok) return;
+      if (!res.ok) return null;
       const data = (await res.json()) as MeResponse;
-      setLimits({
+      const next: Limits = {
         left: data.limits?.left ?? null,
         limit: data.limits?.limit ?? null,
         period: data.limits?.period ?? null,
         status: data.status ?? 'guest',
-      });
+      };
+      setLimits(next);
+      return next;
     } catch {
       // ignore, keep the previous limits
+      return null;
     }
   }, [apiHeaders]);
 
@@ -204,9 +207,22 @@ export function useCall() {
     setLimitHit(hit);
   }, []);
 
-  const dismissLimit = useCallback(() => {
-    setLimitHit(null);
-  }, []);
+  const dismissLimit = useCallback(
+    async (resume = false) => {
+      setLimitHit(null);
+      if (resume && callStateRef.current !== 'idle') {
+        const fresh = await refreshLimits();
+        const left = fresh ? fresh.left : (limits?.left ?? null);
+        if (left === null || left > 0) {
+          sttRef.current?.unmute();
+          vadRef.current?.start();
+          setMuted(false);
+          setCallState('listening');
+        }
+      }
+    },
+    [refreshLimits, limits],
+  );
 
   const finishSpeaking = useCallback(() => {
     setCallState('listening');
@@ -669,18 +685,28 @@ export function useCall() {
       }
       callIdRef.current = call_id;
 
-      const stt = await Stt.connect(
-        mic.stream,
-        ctx,
-        token,
-        {
-          onInterim,
-          onFinal: (_text: string) => {},
-          onError: (err: Error) => console.error('[stt error]', err),
-          onClose: handleSttClose,
-        },
-        auth,
-      );
+      let stt: Stt;
+      try {
+        stt = await Stt.connect(
+          mic.stream,
+          ctx,
+          token,
+          {
+            onInterim,
+            onFinal: (_text: string) => {},
+            onError: (err: Error) => console.error('[stt error]', err),
+            onClose: handleSttClose,
+          },
+          auth,
+        );
+      } catch (err) {
+        console.error('stt connect failed:', err);
+        mic.stop();
+        micRef.current = null;
+        setCurrentCaption('Не получилось подключить распознавание речи. Попробуй ещё раз.');
+        setCallState('idle');
+        return;
+      }
       sttRef.current = stt;
 
       const vad = await Vad.create(mic.stream, { onSpeechStart, onSpeechEnd });
@@ -827,5 +853,6 @@ export function useCall() {
     limits,
     limitHit,
     dismissLimit,
+    refreshLimits,
   };
 }

@@ -8,6 +8,7 @@ export interface OrbProps {
   audioLevel: number;
   muted: boolean;
   onToggleMute(): void;
+  className?: string;
 }
 
 export const EMOTION_COLORS: Record<Emotion, string> = {
@@ -36,12 +37,12 @@ const EMOTION_STYLES: Record<Emotion, EmotionStyle> = {
   ashamed: { core: EMOTION_COLORS.ashamed, glow: '#d48aa0', duration: '2.8s' },
 };
 
-export function Orb({ emotion, speaking, thinking, audioLevel, muted, onToggleMute }: OrbProps) {
+export function Orb({ emotion, speaking, thinking, audioLevel, muted, onToggleMute, className }: OrbProps) {
   const style = EMOTION_STYLES[emotion];
   const levelScale = 1 + audioLevel * 0.15;
 
   return (
-    <div className="relative w-56 h-56 sm:w-64 sm:h-64 shrink-0">
+    <div className={`relative w-56 h-56 sm:w-64 sm:h-64 shrink-0 ${className ?? ''}`}>
       <div
         className={`orb-pulse-layer absolute inset-0 rounded-full ${
           speaking ? `orb-pulse-${emotion}` : thinking ? 'orb-breathe' : ''

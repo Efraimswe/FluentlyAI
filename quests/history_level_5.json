@@ -64,5 +64,17 @@
   "type": "DEPLOY",
   "title": "TASK-05-STEP-02: прод-деплой уровня 5 (коммит 3f82605): лендинг с OG, /call и /account через SPA-rewrite, /privacy.html, вебхук 401 без подписи, checkout 401 без auth, /api/me гость 2/2. Все env на Vercel (LS ключ/store/variant/secret, Supabase, провайдеры)",
   "details": "Hard-лимиты на ключах провайдеров (Alibaba/Azure/Deepgram) — выставляются в их консолях руками Efraim; в коде есть GUEST_DAILY_BUDGET_CENTS=300, rate limit и лимит длины звонка."
+ },
+ {
+  "timestamp": "2026-09-02T22:57:46.716335+00:00",
+  "type": "SPEC_UPDATE",
+  "title": "master_functional.md §2.1: десктоп — полноценный вариант от 1024 px (лендинг в две колонки и шаги в ряд, звонок в две панели кружок/чат, аккаунт и модалки шире), мобильная вёрстка без изменений",
+  "details": "По словам Efraim 2026-09-03 «сделай норм десктоп вариант для всей апки»."
+ },
+ {
+  "timestamp": "2026-09-02T22:57:46.716335+00:00",
+  "type": "STEP_DONE",
+  "title": "Десктоп-вёрстка по §2.1: Landing (lg:grid 2 колонки, 3 карточки шагов), CallScreen (lg:grid [1fr_minmax(360,480)]: слева статус+Orb lg:w-80+трубка, справа Chat на всю высоту + LiveInput), Account lg:max-w-xl, модалки lg:max-w-md; Orb получил className",
+  "details": "Chat/LiveInput/трубка рендерятся дважды (mobile/desktop) через hidden/lg:hidden. Ниже 1024 px DOM и классы прежние."
  }
 ]

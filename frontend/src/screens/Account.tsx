@@ -91,7 +91,7 @@ export function Account({ navigate }: AccountProps) {
 
   return (
     <div className="min-h-dvh w-full bg-slate-950 text-slate-100">
-      <div className="max-w-md mx-auto px-5 py-8 flex flex-col gap-6">
+      <div className="max-w-md mx-auto px-5 py-8 flex flex-col gap-6 lg:max-w-xl">
         <button
           type="button"
           onClick={() => navigate('/')}
@@ -109,12 +109,12 @@ export function Account({ navigate }: AccountProps) {
         ) : null}
 
         {!user ? (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <p className="text-sm text-slate-300">Ты не вошёл.</p>
             <button
               type="button"
               onClick={() => setManualAuthOpen(true)}
-              className="self-start px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold cursor-pointer transition-colors"
+              className="self-start px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold cursor-pointer transition-colors lg:w-auto lg:px-8"
             >
               Войти
             </button>
@@ -123,22 +123,24 @@ export function Account({ navigate }: AccountProps) {
           <div className="flex flex-col gap-4">
             <p className="text-sm text-slate-300">{user.email}</p>
 
-            <div className="rounded-2xl bg-slate-900 border border-slate-800 p-4 flex flex-col gap-3">
+            <div className="rounded-2xl bg-slate-900 border border-slate-800 p-4 flex flex-col gap-3 lg:p-8">
               <h2 className="text-sm font-semibold text-slate-200">Подписка</h2>
 
               {status === 'registered' ? (
                 <>
-                  <p className="text-sm text-slate-400">Бесплатный доступ. 10 сообщений.</p>
-                  <button
-                    type="button"
-                    onClick={() => void handleCheckout()}
-                    disabled={checkoutBusy}
-                    className={`self-start px-5 py-2.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold transition-colors text-sm ${
-                      checkoutBusy ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
-                    }`}
-                  >
-                    {checkoutBusy ? 'Открываю оплату…' : 'Подписаться, €9,99 в месяц'}
-                  </button>
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                    <p className="text-sm text-slate-400">Бесплатный доступ. 10 сообщений.</p>
+                    <button
+                      type="button"
+                      onClick={() => void handleCheckout()}
+                      disabled={checkoutBusy}
+                      className={`self-start px-5 py-2.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold transition-colors text-sm lg:w-auto lg:px-8 ${
+                        checkoutBusy ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                      }`}
+                    >
+                      {checkoutBusy ? 'Открываю оплату…' : 'Подписаться, €9,99 в месяц'}
+                    </button>
+                  </div>
                   {checkoutError ? (
                     <p className="text-red-400 text-sm">Не получилось открыть оплату. Попробуй ещё раз.</p>
                   ) : null}

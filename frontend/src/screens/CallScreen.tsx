@@ -134,12 +134,12 @@ export function CallScreen({ navigate }: CallScreenProps) {
 
       {screen === 'idle' ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-6">
-          <span className="text-sm text-slate-400">Charlie</span>
+          <span className="text-sm text-slate-400 lg:text-xl">Charlie</span>
           <button
             type="button"
             onClick={() => startCall()}
             aria-label="Позвонить"
-            className="w-20 h-20 rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform cursor-pointer"
+            className="w-20 h-20 rounded-full bg-emerald-500 hover:bg-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform cursor-pointer lg:w-24 lg:h-24"
           >
             <Phone className="w-8 h-8 text-slate-950" />
           </button>
@@ -148,7 +148,7 @@ export function CallScreen({ navigate }: CallScreenProps) {
 
       {screen === 'micError' ? (
         <div className="flex-1 flex items-center justify-center px-6">
-          <div className="w-full max-w-sm bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+          <div className="w-full max-w-sm lg:max-w-md bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
             <h2 className="text-lg font-semibold">Нет доступа к микрофону</h2>
             <p className="text-sm text-slate-400 leading-relaxed">
               Разрешите доступ: значок замка в адресной строке → Микрофон → Разрешить.
@@ -168,33 +168,57 @@ export function CallScreen({ navigate }: CallScreenProps) {
 
       {screen === 'call' ? (
         <>
-          <div className="pt-6 flex items-center justify-center min-h-8">
-            {statusText ? (
-              <span
-                className={`px-4 py-1.5 rounded-full text-xs font-medium tracking-wide border ${
-                  callState === 'reconnecting'
-                    ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 animate-pulse'
-                    : 'bg-slate-900/80 border-slate-800 text-slate-300'
-                }`}
-              >
-                {statusText}
-              </span>
-            ) : null}
+          <div className="flex-1 flex flex-col min-h-0 lg:grid lg:grid-cols-[1fr_minmax(360px,480px)] lg:h-dvh">
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="pt-6 flex items-center justify-center min-h-8">
+                {statusText ? (
+                  <span
+                    className={`px-4 py-1.5 rounded-full text-xs font-medium tracking-wide border ${
+                      callState === 'reconnecting'
+                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-300 animate-pulse'
+                        : 'bg-slate-900/80 border-slate-800 text-slate-300'
+                    }`}
+                  >
+                    {statusText}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 min-h-0">
+                <Orb
+                  emotion={emotion}
+                  speaking={callState === 'speaking'}
+                  thinking={callState === 'thinking' || callState === 'connecting'}
+                  audioLevel={audioLevel}
+                  muted={muted}
+                  onToggleMute={toggleMute}
+                  className="lg:w-80 lg:h-80"
+                />
+                <div className="contents lg:hidden">
+                  <Chat items={transcripts} playing={playing} />
+                </div>
+                <button
+                  type="button"
+                  onClick={endCall}
+                  aria-label="Положить трубку"
+                  className="hidden lg:flex w-16 h-16 rounded-full bg-red-600 hover:bg-red-500 items-center justify-center shadow-lg shadow-red-600/30 active:scale-95 transition-transform cursor-pointer"
+                >
+                  <PhoneOff className="w-6 h-6 text-white" />
+                </button>
+              </div>
+            </div>
+
+            <div className="hidden lg:flex lg:flex-col lg:border-l lg:border-slate-800 lg:min-h-0">
+              <div className="flex-1 min-h-0 lg:flex lg:flex-col lg:px-4 lg:pt-4">
+                <Chat items={transcripts} playing={playing} />
+              </div>
+              <div className="lg:p-4">
+                <LiveInput text={currentCaption} listening={callState === 'listening'} />
+              </div>
+            </div>
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 min-h-0">
-            <Orb
-              emotion={emotion}
-              speaking={callState === 'speaking'}
-              thinking={callState === 'thinking' || callState === 'connecting'}
-              audioLevel={audioLevel}
-              muted={muted}
-              onToggleMute={toggleMute}
-            />
-            <Chat items={transcripts} playing={playing} />
-          </div>
-
-          <div className="px-6 pt-3 pb-[env(safe-area-inset-bottom)] flex flex-col items-center gap-4">
+          <div className="px-6 pt-3 pb-[env(safe-area-inset-bottom)] flex flex-col items-center gap-4 lg:hidden">
             <LiveInput text={currentCaption} listening={callState === 'listening'} />
             <button
               type="button"

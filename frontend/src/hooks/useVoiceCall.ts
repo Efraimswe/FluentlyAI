@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || '';
+
 export type CallState = 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking';
 
 export interface TranscriptItem {
@@ -15,7 +17,7 @@ export function useVoiceCall() {
   const [transcripts, setTranscripts] = useState<TranscriptItem[]>([]);
   const [currentCaption, setCurrentCaption] = useState<string>('');
 
-  const wsRef = useRef<WebSocket | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
@@ -95,9 +97,7 @@ export function useVoiceCall() {
       console.log('>>> Interrupting tutor');
       stopCurrentAudio();
       setCallState('listening');
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ type: 'user_interrupted' }));
-      }
+      abortRef.current?.abort();
       setTimeout(() => {
         resumeRecognition();
       }, 100);
@@ -191,8 +191,73 @@ export function useVoiceCall() {
     }
   }, [stopCurrentAudio, pauseRecognition, resumeRecognition]);
 
+  // Send user text to backend, stream SSE reply
+  const sendTurn = useCallback(async (text: string) => {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setCallState('thinking');
+    try {
+      const res = await fetch(`${API_BASE}/api/turn`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+        signal: ctrl.signal
+      });
+      if (!res.ok || !res.body) throw new Error(`turn failed: ${res.status}`);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      let tutorText = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const blocks = buf.split('\n\n');
+        buf = blocks.pop() ?? '';
+        for (const block of blocks) {
+          let event = 'message';
+          let dataStr = '';
+          for (const line of block.split('\n')) {
+            if (line.startsWith('event: ')) event = line.slice(7).trim();
+            else if (line.startsWith('data: ')) dataStr += line.slice(6);
+          }
+          if (!dataStr) continue;
+          const data = JSON.parse(dataStr);
+          if (event === 'text') {
+            tutorText += data.delta ?? '';
+            setCurrentCaption(tutorText);
+          } else if (event === 'audio') {
+            setTranscripts((prev) => [
+              ...prev,
+              {
+                id: Math.random().toString(),
+                speaker: 'tutor',
+                text: data.text ?? '',
+                timestamp: new Date()
+              }
+            ]);
+            await playAudioBase64(data.b64 ?? '', data.text ?? '');
+          } else if (event === 'done') {
+            if (callStateRef.current !== 'speaking') {
+              setCallState('listening');
+              resumeRecognition();
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        console.error('turn error:', err);
+        setCurrentCaption('Ошибка соединения с сервером');
+        setCallState('listening');
+        resumeRecognition();
+      }
+    }
+  }, [playAudioBase64, resumeRecognition]);
+
   // Start Call
-  const startCall = useCallback(async (scenarioId: string = 'casual') => {
+  const startCall = useCallback(async (_scenarioId: string = 'casual') => {
     try {
       setCallState('connecting');
       setTranscripts([]);
@@ -228,60 +293,10 @@ export function useVoiceCall() {
 
       updateAudioLevel();
 
-      // Connect WebSocket via 127.0.0.1
-      const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
-      const wsUrl = import.meta.env.VITE_WS_URL || `ws://${host}:8000/ws/call`;
-      console.log('Connecting to WebSocket:', wsUrl);
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        console.log('WebSocket connected, sending start_call');
-        setCallState('listening');
-        ws.send(JSON.stringify({ type: 'start_call', scenario: scenarioId }));
-      };
-
-      ws.onmessage = async (event) => {
-        try {
-          const data = JSON.parse(event.data);
-
-          if (data.type === 'status') {
-            setCallState(data.state);
-          } else if (data.type === 'transcript') {
-            setCurrentCaption(data.text);
-            setTranscripts((prev) => [
-              ...prev,
-              {
-                id: Math.random().toString(),
-                speaker: data.speaker,
-                text: data.text,
-                timestamp: new Date()
-              }
-            ]);
-          } else if (data.type === 'audio_packet') {
-            await playAudioBase64(data.audio_base64, data.text || '');
-          } else if (data.type === 'interrupted') {
-            stopCurrentAudio();
-            setCallState('listening');
-            setTimeout(() => {
-              resumeRecognition();
-            }, 200);
-          } else if (data.type === 'call_ended') {
-            endCall();
-          }
-        } catch (e) {
-          console.error('Error parsing WS message:', e);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket Error:', error);
-        setCurrentCaption('Ошибка соединения с сервером');
-      };
-
-      ws.onclose = () => {
-        setCallState('idle');
-      };
+      // Warm up backend and get greeting via SSE
+      fetch(`${API_BASE}/api/warmup`).catch(() => {});
+      setCallState('listening');
+      sendTurn('');
 
       // Initialize Web Speech Recognition
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -314,15 +329,19 @@ export function useVoiceCall() {
           setCurrentCaption(rawText);
 
           // If final phrase is ready, send to backend
-          if (finalTranscript.trim() && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-            setCallState('thinking');
+          if (finalTranscript.trim()) {
+            const userText = finalTranscript.trim();
+            setTranscripts((prev) => [
+              ...prev,
+              {
+                id: Math.random().toString(),
+                speaker: 'user',
+                text: userText,
+                timestamp: new Date()
+              }
+            ]);
             pauseRecognition(); // Mute mic while thinking and answering
-            wsRef.current.send(
-              JSON.stringify({
-                type: 'user_speech',
-                text: finalTranscript.trim()
-              })
-            );
+            sendTurn(userText);
           }
         };
 
@@ -351,7 +370,7 @@ export function useVoiceCall() {
       console.error('Failed to start call:', err);
       endCall();
     }
-  }, [playAudioBase64, stopCurrentAudio, updateAudioLevel, pauseRecognition, resumeRecognition]);
+  }, [playAudioBase64, stopCurrentAudio, updateAudioLevel, pauseRecognition, resumeRecognition, sendTurn]);
 
   // End Call
   const endCall = useCallback(() => {
@@ -365,12 +384,9 @@ export function useVoiceCall() {
       recognitionRef.current = null;
     }
 
-    if (wsRef.current) {
-      if (wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ type: 'stop_call' }));
-      }
-      wsRef.current.close();
-      wsRef.current = null;
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
     }
 
     if (micStreamRef.current) {

@@ -1,0 +1,242 @@
+[
+ {
+  "timestamp": "2026-08-28T17:17:13.087661Z",
+  "type": "PROJECT_INIT",
+  "title": "Инициализация Уровня 3: Level 3: Чарли говорит — голосовое ядро (SSE, LLM+TTS+STT, перебивание, экран звонка)",
+  "details": "Сгенерировано из master_functional.md v1 + master_technical.md v1. Тасок: 11, микро-шагов: 35."
+ },
+ {
+  "timestamp": "2026-08-30T19:56:06.695758+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-01-STEP-01: удалены websocket_router/scenarios/analytics, main.py — голый FastAPI+CORS+/health, websockets убран из requirements",
+  "details": "Проверка: from app.main import app → ok"
+ },
+ {
+  "timestamp": "2026-08-30T19:59:57.515273+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-01-STEP-02: GET /api/warmup + заглушка POST /api/turn с тестовым SSE-потоком (emotion/text/audio/done)",
+  "details": "Проверено curl: warmup {ok:true}, /api/turn стримит события"
+ },
+ {
+  "timestamp": "2026-08-30T19:59:57.515273+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-01-STEP-03: backend/api/index.py + vercel.json (rewrites /api/* -> python-функция, регион fra1)",
+  "details": "Локальный запуск uvicorn проверен. TASK-01 закрыт целиком"
+ },
+ {
+  "timestamp": "2026-08-30T20:08:06.715203+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-01B-STEP-01: прод-деплой на Vercel (fluently-ai.vercel.app) — фронт + SSE-бэк",
+  "details": "Грабли: Root Directory=frontend в настройках проекта — сброшен через API; функции переехали в api/ от корня. Проверено curl на проде: warmup, SSE, фронт 200"
+ },
+ {
+  "timestamp": "2026-08-30T20:08:06.715203+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-01B-STEP-02: сервис fluently-backend удалён с Render (DELETE 204, сервисов 0)",
+  "details": "Бэк теперь живёт только на Vercel"
+ },
+ {
+  "timestamp": "2026-08-30T20:21:18.696994+00:00",
+  "type": "BUG_SOLVED",
+  "title": "Прод-фронт стучался в мёртвый WS на Render (wss://fluently-backend-0psq.onrender.com/ws/call failed)",
+  "details": "Причина: после сноса Render старый билд фронта остался на WS-транспорте. Фикс: useVoiceCall.ts переведён с WebSocket на SSE (fetch POST /api/turn, свой домен), /api/turn на бэке — echo-заглушка (отвечает на текст юзера, озвучка через браузерный speechSynthesis-фоллбэк). Прод передеплоен, проверено curl: SSE отвечает на текст, фронт 200, ссылок на onrender в рантайме нет. Реальные мозги — TASK-02."
+ },
+ {
+  "timestamp": "2026-09-02T16:45:25.462747+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-02-STEP-01: backend/app/llm.py — LLMProvider (DashScope OpenAI-compatible, qwen3.5-27b, stream=True, enable_thinking=false, usage через stream_options)",
+  "details": "Класс LLMProvider: ключ/base_url/модель из .env (DASHSCOPE_API_KEY, DASHSCOPE_BASE_URL, LLM_MODEL=qwen3.5-27b). httpx stream, разбор SSE data-строк, usage в last_usage."
+ },
+ {
+  "timestamp": "2026-09-02T16:45:25.462747+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-02-STEP-02: stream_turn: тег [emotion] из первых токенов (7 эмоций, fallback calm), дальше text-дельты",
+  "details": "stream_turn буферит первые токены до \"]\" (или пока ясно, что тега нет), отдаёт (\"emotion\", x) один раз, затем (\"text\", delta). Неизвестный/отсутствующий тег → calm."
+ },
+ {
+  "timestamp": "2026-09-02T16:45:25.462747+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-02-STEP-03: split_sentences: резак по . ? ! или ≥12 слов+запятая; прогон в консоли: первый токен ~950 мс, весь ответ ~1.3 с, тег приходит",
+  "details": "split_sentences — async-генератор поверх дельт. Юнит-проверка резака прошла. Живой прогон: \"[sad] No worries, I just wish you could've been there...\" — 2 предложения, tokens_in 139 / out 27."
+ },
+ {
+  "timestamp": "2026-09-02T16:57:41.662012+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-03-STEP-01: backend/app/tts.py — TTSProvider (Azure REST, SSML mstts:express-as, голос AZURE_TTS_VOICE=en-US-DavisNeural, mp3 24kHz 48kbps)",
+  "details": "Один httpx.AsyncClient переиспользуется между предложениями. build_ssml экранирует текст, calm — без express-as."
+ },
+ {
+  "timestamp": "2026-09-02T16:57:41.662012+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-03-STEP-02: маппинг 7 эмоций → стили Azure + styledegree; все 7 приняты Azure (200), ~200–480 мс на предложение",
+  "details": "calm→default, happy→cheerful 1.3, angry→angry 1.5, offended→unfriendly 1.2, sad→sad 1.2, flirty→friendly 1.3, ashamed→embarrassed 1.0."
+ },
+ {
+  "timestamp": "2026-09-02T16:57:41.662012+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-03-STEP-03: synthesize_stream — producer/consumer на asyncio.Queue, lookahead=2, отдача строго по seq; отмена → cancel задач TTS",
+  "details": "Первая версия ждала 3 предложения перед отдачей первого (seq=1 через 1.9 с) — переделано: seq=1 отдаётся через ~390 мс после готовности своего текста. Живой прогон LLM→TTS: первый звук ~1.46 с."
+ },
+ {
+  "timestamp": "2026-09-02T17:03:32.726230+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-04-STEP-01: backend/app/turn.py — POST /api/turn: emotion → text → audio(seq,b64,text) → done(usage); заглушка из main.py снята, роутер подключён",
+  "details": "LLM и TTS соединены через asyncio.Queue: pump_llm шлёт text-дельты и кормит split_sentences, pump_tts отдаёт audio по seq. Память звонка в памяти процесса (_HISTORY по call_id, 16 реплик); пустой text = приветствие, Чарли говорит первым. spoken_upto режет последнюю реплику до реально прозвучавших предложений. Временный промпт Чарли в turn.py — TASK-05 заменит."
+ },
+ {
+  "timestamp": "2026-09-02T17:03:32.726230+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-04-STEP-02: отмена — разрыв соединения клиентом → cancel задач LLM/TTS, лог чистый",
+  "details": "Проверено timeout 0.6 curl: 200 OK, без трейсбеков."
+ },
+ {
+  "timestamp": "2026-09-02T17:03:32.726230+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-04-STEP-03: пул из 15 fallback-фраз с эмоцией; таймаут первого токена 5 с или ошибка LLM → событие fallback + фраза «повтори» голосом; реплика юзера из истории убирается",
+  "details": "Проверено с LLM_MODEL=does-not-exist: fallback → emotion → text → audio → done, история пустая."
+ },
+ {
+  "timestamp": "2026-09-02T17:03:32.726230+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-04-STEP-04: usage в done: tokens_in/out из стрима, tts_chars по предложениям. Первый звук в приветствии: 1183 мс (цель ≤ 1500)",
+  "details": "GET /api/turn/debug/{call_id} — посмотреть историю звонка."
+ },
+ {
+  "timestamp": "2026-09-02T17:33:08.692830+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-05-STEP-01: backend/app/prompts/charlie_system.md — слой 1 по функц. спеке §1 (~1400 токенов): био, характер, слабые места, привычки речи, триггеры эмоций, границы, формат [emotion]",
+  "details": "turn.py читает промпт из файла. tokens_in приветствия 1429 — в рамках ~1500 из тех-спеки §7.1."
+ },
+ {
+  "timestamp": "2026-09-02T17:33:08.692830+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-05-STEP-02: greeting.md + day_events.md — приветствие с заглушкой из 5 событий дня (рандом), Чарли начинает первым",
+  "details": "greeting_instruction(day_event) подставляет событие в шаблон. Level 4 заменит day_events.md таблицей day_events."
+ },
+ {
+  "timestamp": "2026-09-02T17:33:08.692830+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-05-STEP-03: scripts/test_dialogues.py — 10 диалогов, 30 вызовов LLM, все PASS с первого раза: злость/обида/флирт срабатывают, тег всегда есть, нет «я ИИ», медицина отбита, ≤25 слов",
+  "details": "Замечания: в обиде Чарли сказал «asshole»/«jerk» — жёстче, чем «лёгкий мат» из спеки §1.8; после приветствия теряет нить события дня (оно не в истории, только в ответе) — решится слоем 2 [STATE] на 4 уровне."
+ },
+ {
+  "timestamp": "2026-09-02T17:51:49.992424+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-06-STEP-01: frontend/src/audio/mic.ts — openMic (echoCancellation/noiseSuppression/AGC), getAudioContext, unlockAudio (resume + тихий буфер для iOS)",
+  "details": "Общий AudioContext-синглтон; openMic бросает исходный DOMException для экрана «нет микрофона»."
+ },
+ {
+  "timestamp": "2026-09-02T17:51:49.992424+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-06-STEP-02: frontend/src/audio/vad.ts — класс Vad поверх @ricky0123/vad-web 0.0.30 (Silero v5, onnxruntime-web 1.22): свой state machine на onFrameProcessed, speechStart/speechEnd, тишина 500 мс",
+  "details": "Библиотечные onSpeechStart/End не используем — свои пороги меняются на лету. getStream отдаёт наш MediaStream, чтобы STT (TASK-07) делил тот же микрофон. vite-plugin-static-copy 4.1.1 копирует worklet/onnx/wasm в корень dist (нужен rename stripBase — плагин теперь по умолчанию сохраняет вложенность)."
+ },
+ {
+  "timestamp": "2026-09-02T17:51:49.992424+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-06-STEP-03: динамический порог 0.5/0.8 через setCharlieSpeaking, minSpeechMs 300, muteFor(ms) для защиты от эха. tsc, build, oxlint чистые; дев-сервер отдаёт /vad.worklet.bundle.min.js и /silero_vad_v5.onnx",
+  "details": "В useVoiceCall ещё не подключено — подключение в TASK-07/08."
+ },
+ {
+  "timestamp": "2026-09-02T18:06:29.706091+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-07-STEP-01: backend/app/deepgram_token.py — POST /api/call/start: call_id + временный JWT Deepgram через /v1/auth/grant (TTL 60 с)",
+  "details": "Текущий ключ Deepgram без прав Member → grant отвечает 403. Обход для локалки: DEEPGRAM_DEV_RAW_KEY=1 в .env → бэк отдаёт сырой ключ с deepgram_auth=\"token\". На Vercel не ставить. Нужен новый ключ с правами Member из консоли Deepgram."
+ },
+ {
+  "timestamp": "2026-09-02T18:06:29.706091+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-07-STEP-02: frontend/src/audio/stt.ts — WS к Deepgram nova-3 (linear16 16 kHz, interim_results, smart_format, endpointing=false), PCM из AudioWorklet чанками по 100 мс, KeepAlive, Finalize/CloseStream",
+  "details": "Авторизация через Sec-WebSocket-Protocol [bearer|token, key]. Живой тест node scripts/test_deepgram.mjs (PCM из Azure): interim → FINAL \"Hey, Charlie. I just got promoted at work, and I want to celebrate this Friday.\" from_finalize=true."
+ },
+ {
+  "timestamp": "2026-09-02T18:06:29.706091+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-07-STEP-03: frontend/src/call/useCall.ts — новый хук звонка: mic → VAD → Deepgram interim (строка «ты говоришь») → speechEnd → finalize → POST /api/turn; App.tsx переключён на него одной строкой",
+  "details": "Старый useVoiceCall.ts (webkitSpeechRecognition) остался в репе, не используется. tsc/build/oxlint чистые."
+ },
+ {
+  "timestamp": "2026-09-02T18:06:29.706091+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-08-STEP-01: очередь mp3-чанков по seq через Web Audio без пауз — сделана внутри useCall.ts (nextStartTime, decode по цепочке промисов, onended → listening)",
+  "details": "Сделано в рамках TASK-07, потому что новый хук без очереди не имеет смысла."
+ },
+ {
+  "timestamp": "2026-09-02T18:06:29.706091+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-08-STEP-03: защита от эха — vad.muteFor(200) при старте воспроизведения, порог VAD 0.8 пока играет Чарли, STT на паузе во время речи Чарли",
+  "details": "Сделано в useCall.ts в рамках TASK-07."
+ },
+ {
+  "timestamp": "2026-09-02T18:09:58.081984+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-08-STEP-02: перебивание — speechStart во время speaking → stop + clear + abort SSE; spoken_upto (кол-во полностью прозвучавших чанков) уходит в следующий /api/turn; недосказанные реплики из чата убираются",
+  "details": "useCall.ts: chunkStateRef queued/playing/ended, реплика Чарли попадает в чат только когда чанк реально начал играть; interruptTutor снимает таймеры незапущенных чанков. tsc/oxlint/build чистые."
+ },
+ {
+  "timestamp": "2026-09-02T18:14:23.951577+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-09-STEP-01: src/screens/CallScreen.tsx — главная: только кнопка «Позвонить» (Charlie) + прогрев /api/warmup при загрузке; App.tsx сведён к <CallScreen/>",
+  "details": "Старые ScenarioSelector/PostCallReport/VoiceVisualizer/useVoiceCall/data/scenarios остались в репе, не используются. index.html title: «Charlie Calls — Speak English with a Friend»."
+ },
+ {
+  "timestamp": "2026-09-02T18:14:23.951577+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-09-STEP-02: src/components/Orb.tsx — кружок: 7 эмоций → цвет и характер пульсации по §1.4 (angry — 0.5 с, дрожание, второе кольцо), амплитуда от audioLevel, thinking — дыхание",
+  "details": "Keyframes в index.css. Цвета через inline style, не динамические классы Tailwind."
+ },
+ {
+  "timestamp": "2026-09-02T18:14:23.951577+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-09-STEP-03: мьют на кружке (stt.mute + vad.pause, уважается finishSpeaking), «Положить трубку», статусы «Слушаю»/«Думаю», без «Говорит»; экран «Нет доступа к микрофону» + «Повторить»",
+  "details": "useCall возвращает emotion, muted, toggleMute, micError."
+ },
+ {
+  "timestamp": "2026-09-02T18:14:23.951577+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-09-STEP-04: шеврон → выдвижная панель «Осталось: ∞» (заглушка до уровня 4)",
+  "details": "tsc/oxlint/build чистые."
+ },
+ {
+  "timestamp": "2026-09-02T18:20:25.217700+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-10-STEP-01: src/components/Chat.tsx — реплики пользователя и Чарли пузырями, автоскролл; реплика Чарли появляется, когда чанк реально начал звучать",
+  "details": ""
+ },
+ {
+  "timestamp": "2026-09-02T18:20:25.217700+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-10-STEP-02: бегущий белый блик — ShimmerText: clip-path по прогрессу (performance.now − startedAt)/durationMs через rAF; хук отдаёт playing {seq,text,startedAt,durationMs}",
+  "details": ""
+ },
+ {
+  "timestamp": "2026-09-02T18:20:25.217700+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-10-STEP-03: крайние случаи — «Переподключаюсь…»: ретрай /api/turn ×3, реконнект Deepgram ×5 с тем же call_id (/api/call/start принимает call_id), offline/online; fallback без «сломанного» состояния; LiveInput.tsx — живой ввод с кареткой",
+  "details": "Экран «нет микрофона» был в TASK-09. Ретраи не проверены на живом обрыве сети — только tsc/build."
+ },
+ {
+  "timestamp": "2026-09-02T18:20:25.217700+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-11-STEP-02: замер scripts/measure_latency.py (5 приветствий + 5 ходов, локально → Qwen SG + Azure northeurope): первый звук — приветствие медиана 1842 мс (цель ≤ 2 с ✅), обычный ход медиана 1599 мс (цель ≤ 1.5 с ❌, не хватает ~100 мс)",
+  "details": "Первый токен Qwen ~1300 мс с промптом 1400 токенов (было ~950 с крошечным промптом). Сделано: keep-alive соединение к Qwen (−180 мс на ходе), ранний срез первого чанка по запятой после 5 слов. Рычаги дальше: ужать промпт до ~900 токенов, кэш контекста DashScope, регион функции ближе к SG не поможет (пользователь в EU)."
+ },
+ {
+  "timestamp": "2026-09-02T18:20:25.217700+00:00",
+  "type": "DECISION",
+  "title": "TASK-11-STEP-01 и STEP-03 (живой звонок в браузере и на телефоне) — только руками Efraim: микрофон, перебивание ×3, трубка",
+  "details": "Локально всё поднято: фронт http://localhost:5173 (VITE_API_URL=http://127.0.0.1:8000), бэк :8000. Deepgram через обходной DEEPGRAM_DEV_RAW_KEY=1 до появления Member-ключа."
+ },
+ {
+  "timestamp": "2026-09-02T19:17:48.455328+00:00",
+  "type": "DECISION",
+  "title": "Deepgram: новый ключ с правами Owner → /v1/auth/grant выдаёт JWT на 60 с; обход DEEPGRAM_DEV_RAW_KEY выключен (=0). test_deepgram.mjs по bearer-JWT: FINAL распознан целиком",
+  "details": "Ключи с урезанными правами (по умолчанию из консоли) grant не могут. На Vercel в env нужен этот же Owner-ключ, DEEPGRAM_DEV_RAW_KEY не ставить."
+ },
+ {
+  "timestamp": "2026-09-02T19:47:43.070945+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-11-STEP-01: Efraim прогнал звонок в браузере — работает, «кривовато иногда, но норм в целом»",
+  "details": "Что именно кривовато — не уточнено, спросить."
+ }
+]

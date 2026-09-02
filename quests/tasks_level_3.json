@@ -1,0 +1,387 @@
+{
+ "version": "1.0.0",
+ "project_name": "Charlie Calls",
+ "current_level": 3,
+ "level_title": "Level 3: Чарли говорит — голосовое ядро (SSE, LLM+TTS+STT, перебивание, экран звонка)",
+ "spec_source": "master_functional.md v1 LATEST + master_technical.md v1 LATEST",
+ "streak_days": 0,
+ "last_activity_date": "2026-09-02",
+ "progress": {
+  "total_tasks": 12,
+  "completed_tasks": 11,
+  "total_micro_steps": 37,
+  "completed_micro_steps": 36,
+  "percentage": 97
+ },
+ "phases": [
+  {
+   "id": "phase-1",
+   "title": "Phase 1: Бэкенд на SSE и голосовой пайплайн",
+   "tasks": [
+    {
+     "id": "TASK-01",
+     "title": "Снять WebSocket, поднять FastAPI под Vercel с SSE",
+     "status": "done",
+     "deliverables": [
+      "backend/app/main.py",
+      "backend/api/index.py",
+      "vercel.json"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-01-STEP-01",
+       "title": "Удалить websocket_router, scenarios, analytics; оставить голый FastAPI + CORS",
+       "est_minutes": 10,
+       "status": "done"
+      },
+      {
+       "id": "TASK-01-STEP-02",
+       "title": "Добавить GET /api/warmup и заглушку POST /api/turn, отдающую SSE-поток тестовых событий",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-01-STEP-03",
+       "title": "vercel.json: rewrites /api/* → python-функция, регион fra1; локальный запуск проверен",
+       "est_minutes": 15,
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "id": "TASK-01B",
+     "title": "Задеплоить каркас на Vercel и снести Render",
+     "status": "done",
+     "deliverables": [
+      ".vercel/project.json"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-01B-STEP-01",
+       "title": "vercel deploy из корня репы; /api/warmup и SSE /api/turn работают на живом URL",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-01B-STEP-02",
+       "title": "Удалить старый бэкенд-сервис на Render через API (ключ в ~/.render-api-key)",
+       "est_minutes": 10,
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "id": "TASK-02",
+     "title": "LLM-провайдер Alibaba Qwen3.5-27B со стримом",
+     "status": "done",
+     "deliverables": [
+      "backend/app/llm.py",
+      "backend/.env"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-02-STEP-01",
+       "title": "Класс LLMProvider (OpenAI-compatible): base_url/ключ из .env, stream=True, enable_thinking=false",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-02-STEP-02",
+       "title": "Разбор стрима: вытащить тег [emotion] из первых токенов, дальше отдавать текст-дельты",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-02-STEP-03",
+       "title": "Резак по предложениям (. ? ! или ≥12 слов+запятая) → генератор предложений",
+       "est_minutes": 10,
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "id": "TASK-03",
+     "title": "TTS-провайдер Azure с эмоциями",
+     "status": "done",
+     "deliverables": [
+      "backend/app/tts.py"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-03-STEP-01",
+       "title": "Класс TTSProvider: SSML с mstts:express-as (style по эмоции, styledegree), голос из .env, mp3 24kHz",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-03-STEP-02",
+       "title": "Маппинг 7 эмоций → стили Azure (calm→default, happy→cheerful, angry→angry, offended→unfriendly, sad→sad, flirty→friendly, ashamed→embarrassed)",
+       "est_minutes": 5,
+       "status": "done"
+      },
+      {
+       "id": "TASK-03-STEP-03",
+       "title": "Параллельный TTS: следующее предложение синтезируется, пока предыдущее отправляется",
+       "est_minutes": 15,
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "id": "TASK-04",
+     "title": "POST /api/turn — сборка SSE-потока",
+     "status": "done",
+     "deliverables": [
+      "backend/app/turn.py"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-04-STEP-01",
+       "title": "События emotion → text → audio(seq,b64,text) → done(usage); формат из тех-спеки §5",
+       "est_minutes": 20,
+       "status": "done"
+      },
+      {
+       "id": "TASK-04-STEP-02",
+       "title": "Отмена: разрыв соединения клиентом → отмена LLM-стрима и TTS",
+       "est_minutes": 10,
+       "status": "done"
+      },
+      {
+       "id": "TASK-04-STEP-03",
+       "title": "Пул fallback-фраз (15 шт., с эмоцией) + таймаут LLM 5 с → событие fallback + повтор",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-04-STEP-04",
+       "title": "Подсчёт usage: tokens_in/out, tts_chars → в done",
+       "est_minutes": 5,
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "id": "TASK-05",
+     "title": "Промпт Чарли — слой 1 + приветствие",
+     "status": "done",
+     "deliverables": [
+      "backend/app/prompts/charlie_system.md",
+      "backend/app/prompts/greeting.md"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-05-STEP-01",
+       "title": "Написать слой 1 по функц. спеке §1: био, характер, слабые места, привычки речи, границы, формат [emotion] + 1–2 предложения",
+       "est_minutes": 30,
+       "status": "done"
+      },
+      {
+       "id": "TASK-05-STEP-02",
+       "title": "Приветствие: Чарли начинает первым; пока без event-of-day (заглушка из 5 вариантов)",
+       "est_minutes": 10,
+       "status": "done"
+      },
+      {
+       "id": "TASK-05-STEP-03",
+       "title": "Прогнать 10 тестовых диалогов в консоли: злость/обида/флирт срабатывают, тег всегда есть, нет «я ИИ»",
+       "est_minutes": 20,
+       "status": "done"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "phase-2",
+   "title": "Phase 2: Фронт — микрофон, VAD, потоковый STT, перебивание",
+   "tasks": [
+    {
+     "id": "TASK-06",
+     "title": "Микрофон + Silero VAD в браузере",
+     "status": "done",
+     "deliverables": [
+      "frontend/src/audio/vad.ts",
+      "frontend/src/audio/mic.ts"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-06-STEP-01",
+       "title": "getUserMedia с echoCancellation/noiseSuppression; разблокировка AudioContext по тапу (iOS)",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-06-STEP-02",
+       "title": "Подключить @ricky0123/vad-web: события speechStart / speechEnd (тишина 500 мс)",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-06-STEP-03",
+       "title": "Порог VAD динамический: 0.5 в тишине, 0.8 пока играет Чарли; игнор < 300 мс",
+       "est_minutes": 10,
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "id": "TASK-07",
+     "title": "Deepgram потоковый STT + живой ввод",
+     "status": "done",
+     "deliverables": [
+      "frontend/src/audio/stt.ts",
+      "backend/app/deepgram_token.py"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-07-STEP-01",
+       "title": "Бэк: выдача временного ключа Deepgram (TTL 60 с) в /api/call/start",
+       "est_minutes": 10,
+       "status": "done"
+      },
+      {
+       "id": "TASK-07-STEP-02",
+       "title": "WS к Deepgram nova-3, interim_results=true; PCM 16kHz чанки по 100 мс",
+       "est_minutes": 20,
+       "status": "done"
+      },
+      {
+       "id": "TASK-07-STEP-03",
+       "title": "interim → строка «ты говоришь» снизу; final по speechEnd → POST /api/turn",
+       "est_minutes": 15,
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "id": "TASK-08",
+     "title": "Аудио-очередь и перебивание",
+     "status": "done",
+     "deliverables": [
+      "frontend/src/audio/player.ts",
+      "frontend/src/call/useCall.ts"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-08-STEP-01",
+       "title": "Очередь mp3-чанков по seq через Web Audio, без пауз между предложениями",
+       "est_minutes": 20,
+       "status": "done"
+      },
+      {
+       "id": "TASK-08-STEP-02",
+       "title": "Перебивание: speechStart во время speaking → stop + clear + abort SSE; spoken_upto в следующий turn",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-08-STEP-03",
+       "title": "Защита от эха: 200 мс после старта воспроизведения VAD не считается",
+       "est_minutes": 5,
+       "status": "done"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "phase-3",
+   "title": "Phase 3: Экран звонка по спеке",
+   "tasks": [
+    {
+     "id": "TASK-09",
+     "title": "Экран звонка — кружок, статусы, кнопки (mobile first)",
+     "status": "done",
+     "deliverables": [
+      "frontend/src/screens/CallScreen.tsx",
+      "frontend/src/components/Orb.tsx"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-09-STEP-01",
+       "title": "Главная: только кнопка «Позвонить» (+ прогрев /api/warmup при загрузке экрана)",
+       "est_minutes": 10,
+       "status": "done"
+      },
+      {
+       "id": "TASK-09-STEP-02",
+       "title": "Кружок: пульсация при speaking; 7 эмоций → цвет и характер пульсации по таблице §1.4 (angry — резче, с эффектами)",
+       "est_minutes": 30,
+       "status": "done"
+      },
+      {
+       "id": "TASK-09-STEP-03",
+       "title": "Кнопка мьюта на кружке; кнопка «Положить трубку»; статусы «Слушаю»/«Думаю» (без «Говорит»)",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-09-STEP-04",
+       "title": "Шеврон → выдвижная панель остатка (пока заглушка «∞»)",
+       "est_minutes": 10,
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "id": "TASK-10",
+     "title": "Чат, бегущий блик, крайние случаи",
+     "status": "done",
+     "deliverables": [
+      "frontend/src/components/Chat.tsx",
+      "frontend/src/components/LiveInput.tsx"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-10-STEP-01",
+       "title": "Чат: реплики пользователя и Чарли; текст Чарли появляется по event text",
+       "est_minutes": 15,
+       "status": "done"
+      },
+      {
+       "id": "TASK-10-STEP-02",
+       "title": "Бегущий белый блик по тексту предложения, которое сейчас звучит (по audio.text + длительности чанка)",
+       "est_minutes": 25,
+       "status": "done"
+      },
+      {
+       "id": "TASK-10-STEP-03",
+       "title": "Экраны: нет доступа к микрофону (как включить + Повторить); «Переподключаюсь…» при обрыве; fallback-фраза без «сломанного» состояния",
+       "est_minutes": 20,
+       "status": "done"
+      }
+     ]
+    },
+    {
+     "id": "TASK-11",
+     "title": "E2E-проверка ядра",
+     "status": "in_progress",
+     "deliverables": [
+      "quests/history_level_3.json"
+     ],
+     "micro_steps": [
+      {
+       "id": "TASK-11-STEP-01",
+       "title": "Локально: звонок → Чарли здоровается первым ≤ 2 с → 5 обменов → перебить 3 раза → положить трубку; всё по спеке",
+       "est_minutes": 20,
+       "status": "done"
+      },
+      {
+       "id": "TASK-11-STEP-02",
+       "title": "Замер задержки до первого звука (цель ≤ 1.5 с) — записать в history",
+       "est_minutes": 10,
+       "status": "done"
+      },
+      {
+       "id": "TASK-11-STEP-03",
+       "title": "Телефон (iOS/Android через локальную сеть): микрофон, звук, перебивание работают",
+       "est_minutes": 20,
+       "status": "todo"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,246 @@
+{
+  "version": "1.0.0",
+  "project_name": "Charlie Calls",
+  "current_level": 4,
+  "level_title": "Level 4: Чарли помнит — Supabase, память, состояние, гость, лимиты",
+  "spec_source": "master_functional.md v1 LATEST + master_technical.md v1 LATEST",
+  "streak_days": 0,
+  "last_activity_date": "2026-08-28",
+  "progress": {
+    "total_tasks": 8,
+    "completed_tasks": 0,
+    "total_micro_steps": 22,
+    "completed_micro_steps": 0,
+    "percentage": 0
+  },
+  "phases": [
+    {
+      "id": "phase-1",
+      "title": "Phase 1: База и состояние Чарли",
+      "tasks": [
+        {
+          "id": "TASK-01",
+          "title": "Supabase: проект, схема, RLS",
+          "status": "todo",
+          "deliverables": [
+            "supabase/migrations/0001_init.sql"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-01-STEP-01",
+              "title": "Создать проект Supabase (EU), положить ключи в .env",
+              "est_minutes": 10,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-01-STEP-02",
+              "title": "Миграция всех таблиц из тех-спеки §6 + RLS (юзер читает своё, сервер пишет service-role)",
+              "est_minutes": 30,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-01-STEP-03",
+              "title": "Сиды: limits, plans, provider_rates, fallback_phrases, day_events (30 событий)",
+              "est_minutes": 20,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-02",
+          "title": "Состояние и память в промпте (слой 2)",
+          "status": "todo",
+          "deliverables": [
+            "backend/app/state.py",
+            "backend/app/prompts/state_block.md"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-02-STEP-01",
+              "title": "Загрузка charlie_state + memories + user_day_event → блок [STATE]/[MEMORY]/[RULES NOW] после истории",
+              "est_minutes": 20,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-02-STEP-02",
+              "title": "Событие дня: выбор раз в день по весам, влияет на стартовое настроение; приветствие использует его",
+              "est_minutes": 15,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-02-STEP-03",
+              "title": "Счётчик внимания: правила в [RULES NOW] по уровню (низкий → больше о себе)",
+              "est_minutes": 10,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-03",
+          "title": "Post-call запрос и модалка итога",
+          "status": "todo",
+          "deliverables": [
+            "backend/app/postcall.py",
+            "frontend/src/components/CallSummary.tsx"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-03-STEP-01",
+              "title": "POST /api/call/end → фоновый запрос: JSON (mood, attention, new_memories, offended_reason, summary, praise)",
+              "est_minutes": 20,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-03-STEP-02",
+              "title": "Запись в charlie_state / memories / calls; следующий звонок стартует с этим",
+              "est_minutes": 10,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-03-STEP-03",
+              "title": "Модалка: длительность, настроение Чарли (цвет), конкретная похвала, «Ещё раз»; ждёт ≤ 3 с, иначе дозагружает",
+              "est_minutes": 20,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-04",
+          "title": "Учёт сообщений и себестоимости",
+          "status": "todo",
+          "deliverables": [
+            "backend/app/usage.py"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-04-STEP-01",
+              "title": "Каждое сообщение → messages с tokens/tts_chars/stt_sec и cost по provider_rates",
+              "est_minutes": 15,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-04-STEP-02",
+              "title": "usage_daily инкремент после done; маржа по формуле — SQL-view",
+              "est_minutes": 15,
+              "status": "todo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "title": "Phase 2: Пользователи, гость, лимиты",
+      "tasks": [
+        {
+          "id": "TASK-05",
+          "title": "Supabase Auth",
+          "status": "todo",
+          "deliverables": [
+            "frontend/src/auth/*",
+            "backend/app/auth.py"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-05-STEP-01",
+              "title": "Google + email magic link; сессия на фронте; JWT проверка на бэке",
+              "est_minutes": 25,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-05-STEP-02",
+              "title": "users создаётся при первом входе, status=registered",
+              "est_minutes": 10,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-06",
+          "title": "Гость: fingerprint и 2 реплики → модалка регистрации",
+          "status": "todo",
+          "deliverables": [
+            "frontend/src/guest/fingerprint.ts",
+            "backend/app/limits.py"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-06-STEP-01",
+              "title": "fingerprint = sha256(UA+screen+tz+lang+WebGL+canvas) + кука; таблица guests",
+              "est_minutes": 15,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-06-STEP-02",
+              "title": "Промпт: на 2-й реплике гостя — незакрытый ход + «дальше после регистрации» в характере",
+              "est_minutes": 10,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-06-STEP-03",
+              "title": "После озвучки 2-й реплики → микрофон off → модалка регистрации",
+              "est_minutes": 15,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-07",
+          "title": "Лимиты по статусам + предохранители",
+          "status": "todo",
+          "deliverables": [
+            "backend/app/limits.py"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-07-STEP-01",
+              "title": "Проверка лимита до LLM по таблице limits (total/day, сброс в полночь по tz пользователя); событие limit",
+              "est_minutes": 20,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-07-STEP-02",
+              "title": "Лимит посреди звонка → Чарли завершает в характере → модалка подписки/регистрации",
+              "est_minutes": 15,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-07-STEP-03",
+              "title": "Глобальный дневной бюджет гостей; rate limit /api/turn; лимит длины звонка 15 мин",
+              "est_minutes": 15,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-07-STEP-04",
+              "title": "Шеврон-панель показывает реальный остаток из /api/me",
+              "est_minutes": 10,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-08",
+          "title": "E2E-проверка памяти",
+          "status": "todo",
+          "deliverables": [
+            "quests/history_level_4.json"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-08-STEP-01",
+              "title": "Звонок 1: бросить трубку посреди его истории → Звонок 2: он обижен и напоминает; помнит имя и факт",
+              "est_minutes": 20,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-08-STEP-02",
+              "title": "Гость в инкогнито упирается в 2; зарегистрированный — в 10",
+              "est_minutes": 10,
+              "status": "todo"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

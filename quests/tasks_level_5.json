@@ -1,0 +1,202 @@
+{
+  "version": "1.0.0",
+  "project_name": "Charlie Calls",
+  "current_level": 5,
+  "level_title": "Level 5: Charlie Calls в проде — подписка, лендинг, домен, mobile-полиш",
+  "spec_source": "master_functional.md v1 LATEST + master_technical.md v1 LATEST",
+  "streak_days": 0,
+  "last_activity_date": "2026-08-28",
+  "progress": {
+    "total_tasks": 8,
+    "completed_tasks": 0,
+    "total_micro_steps": 14,
+    "completed_micro_steps": 0,
+    "percentage": 0
+  },
+  "phases": [
+    {
+      "id": "phase-1",
+      "title": "Phase 1: Деньги",
+      "tasks": [
+        {
+          "id": "TASK-01",
+          "title": "Lemon Squeezy: продукт и checkout",
+          "status": "todo",
+          "deliverables": [
+            "backend/app/payments.py",
+            "frontend/src/screens/Paywall.tsx"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-01-STEP-01",
+              "title": "Продукт «Charlie Calls Monthly», €9.99/мес, trial 3 дня с картой; variant_id в .env",
+              "est_minutes": 15,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-01-STEP-02",
+              "title": "Экран пейволла + Checkout overlay с custom[user_id]",
+              "est_minutes": 20,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-02",
+          "title": "Вебхуки и статусы подписки",
+          "status": "todo",
+          "deliverables": [
+            "backend/app/webhooks.py"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-02-STEP-01",
+              "title": "POST /api/webhooks/lemonsqueezy с проверкой подписи; события created/updated/payment_success/cancelled/expired → subscriptions + users.status",
+              "est_minutes": 30,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-02-STEP-02",
+              "title": "Тест в test mode: карта 4242 → trial → subscriber → cancel → registered",
+              "est_minutes": 15,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-03",
+          "title": "Экран аккаунта",
+          "status": "todo",
+          "deliverables": [
+            "frontend/src/screens/Account.tsx"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-03-STEP-01",
+              "title": "Только подписка: статус, дата продления, ссылка на customer portal, выход. Без остатка реплик",
+              "est_minutes": 20,
+              "status": "todo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "title": "Phase 2: Лендинг, домен, деплой",
+      "tasks": [
+        {
+          "id": "TASK-04",
+          "title": "Лендинг (mobile first)",
+          "status": "todo",
+          "deliverables": [
+            "frontend/src/screens/Landing.tsx"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-04-STEP-01",
+              "title": "Одно предложение о Чарли; 2–3 его реплики; 3 шага; цена/бесплатно; кнопка «Попробовать» → прогрев + экран звонка",
+              "est_minutes": 40,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-04-STEP-02",
+              "title": "<title> «Charlie Calls — Speak English with a Friend», OG-теги, favicon",
+              "est_minutes": 10,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-05",
+          "title": "Домен и продакшен",
+          "status": "todo",
+          "deliverables": [
+            "vercel.json",
+            "DNS"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-05-STEP-01",
+              "title": "Купить charliecalls.com, привязать к Vercel, SSL",
+              "est_minutes": 15,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-05-STEP-02",
+              "title": "Все env в Vercel; prod-деплой; warmup и SSE работают на проде; лимиты на ключах провайдеров выставлены",
+              "est_minutes": 25,
+              "status": "todo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "title": "Phase 3: Полиш",
+      "tasks": [
+        {
+          "id": "TASK-06",
+          "title": "Mobile-полиш и крайние случаи на проде",
+          "status": "todo",
+          "deliverables": [
+            "frontend/src/*"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-06-STEP-01",
+              "title": "iOS Safari: аудио после тапа, микрофон, фон/блокировка экрана; Android Chrome",
+              "est_minutes": 30,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-06-STEP-02",
+              "title": "Пропал интернет посреди звонка → reconnecting без сброса",
+              "est_minutes": 15,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-07",
+          "title": "Прогон по эвристикам Нильсена + фикс",
+          "status": "todo",
+          "deliverables": [
+            "quests/history_level_5.json"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-07-STEP-01",
+              "title": "Быстрый чеклист по 10 эвристикам на 4 экранах; список находок",
+              "est_minutes": 20,
+              "status": "todo"
+            },
+            {
+              "id": "TASK-07-STEP-02",
+              "title": "Фикс критичных находок",
+              "est_minutes": 30,
+              "status": "todo"
+            }
+          ]
+        },
+        {
+          "id": "TASK-08",
+          "title": "Финальная приёмка",
+          "status": "todo",
+          "deliverables": [
+            "quests/history_level_5.json"
+          ],
+          "micro_steps": [
+            {
+              "id": "TASK-08-STEP-01",
+              "title": "С телефона незнакомого человека: лендинг → 2 реплики → регистрация → 10 → триал (test mode) — без подсказок",
+              "est_minutes": 20,
+              "status": "todo"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -29,3 +29,15 @@ export const Mic: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' })
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
   </svg>
 );
+
+export const MicOff: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M9 9v3a3 3 0 004.24 2.73M15 9.34V5a3 3 0 00-5.94-.6M19 11a7 7 0 01-1.02 3.64M12 18v4m0 0H8m4 0h4" />
+  </svg>
+);
+
+export const ChevronLeft: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+  </svg>
+);

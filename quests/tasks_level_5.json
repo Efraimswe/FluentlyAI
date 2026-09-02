@@ -8,10 +8,10 @@
  "last_activity_date": "2026-09-03",
  "progress": {
   "total_tasks": 8,
-  "completed_tasks": 3,
+  "completed_tasks": 5,
   "total_micro_steps": 14,
-  "completed_micro_steps": 8,
-  "percentage": 57
+  "completed_micro_steps": 10,
+  "percentage": 71
  },
  "phases": [
   {
@@ -110,7 +110,7 @@
     {
      "id": "TASK-05",
      "title": "Домен и продакшен",
-     "status": "in_progress",
+     "status": "done",
      "deliverables": [
       "vercel.json",
       "DNS"
@@ -126,7 +126,7 @@
        "id": "TASK-05-STEP-02",
        "title": "Все env в Vercel; prod-деплой; warmup и SSE работают на проде; лимиты на ключах провайдеров выставлены",
        "est_minutes": 25,
-       "status": "todo"
+       "status": "done"
       }
      ]
     }
@@ -161,7 +161,7 @@
     {
      "id": "TASK-07",
      "title": "Прогон по эвристикам Нильсена + фикс",
-     "status": "in_progress",
+     "status": "done",
      "deliverables": [
       "quests/history_level_5.json"
      ],
@@ -176,7 +176,7 @@
        "id": "TASK-07-STEP-02",
        "title": "Фикс критичных находок",
        "est_minutes": 30,
-       "status": "todo"
+       "status": "done"
       }
      ]
     },

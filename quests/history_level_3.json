@@ -238,5 +238,23 @@
   "type": "STEP_DONE",
   "title": "TASK-11-STEP-01: Efraim прогнал звонок в браузере — работает, «кривовато иногда, но норм в целом»",
   "details": "Что именно кривовато — не уточнено, спросить."
+ },
+ {
+  "timestamp": "2026-09-02T19:52:40.859850+00:00",
+  "type": "DECISION",
+  "title": "TASK-11-STEP-03 (тест с телефона) пропущен по решению Efraim — «похуй на тест с телефона»",
+  "details": "Проверить на телефоне позже, когда будет домен и https (уровень 5)."
+ },
+ {
+  "timestamp": "2026-09-02T19:52:40.859850+00:00",
+  "type": "DEPLOY",
+  "title": "Прод-деплой уровня 3 на Vercel: https://fluently-ai.vercel.app — warmup ok, /api/call/start выдаёт JWT Deepgram, /api/turn приветствие с audio, VAD-ассеты отдаются",
+  "details": "Коммит d874d0c запушен в origin/main. Env на Vercel (production): DASHSCOPE_API_KEY, DASHSCOPE_BASE_URL, LLM_MODEL, AZURE_SPEECH_KEY, AZURE_SPEECH_REGION, AZURE_TTS_VOICE, DEEPGRAM_API_KEY (Owner-ключ). Старый VITE_WS_URL остался, не используется. Корневой requirements.txt тянет edge-tts — лишнее, можно убрать."
+ },
+ {
+  "timestamp": "2026-09-02T19:52:40.859850+00:00",
+  "type": "LEVEL_CLEARED",
+  "title": "Level 3 закрыт: 11/12 тасок done, 36/37 шагов + 1 пропущен. Чарли говорит в проде: Qwen → Azure → Deepgram, перебивание, эмоции, чат",
+  "details": "Известные хвосты: задержка обычного хода 1.6 с (цель 1.5), мат в обиде жёстче спеки, потеря нити события дня после приветствия (слой STATE на 4 уровне), «кривовато иногда» — баги Efraim скажет отдельно."
  }
 ]

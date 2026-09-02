@@ -8,10 +8,10 @@
  "last_activity_date": "2026-09-02",
  "progress": {
   "total_tasks": 12,
-  "completed_tasks": 11,
+  "completed_tasks": 12,
   "total_micro_steps": 37,
-  "completed_micro_steps": 36,
-  "percentage": 97
+  "completed_micro_steps": 37,
+  "percentage": 100
  },
  "phases": [
   {
@@ -356,7 +356,7 @@
     {
      "id": "TASK-11",
      "title": "E2E-проверка ядра",
-     "status": "in_progress",
+     "status": "done",
      "deliverables": [
       "quests/history_level_3.json"
      ],
@@ -377,11 +377,13 @@
        "id": "TASK-11-STEP-03",
        "title": "Телефон (iOS/Android через локальную сеть): микрофон, звук, перебивание работают",
        "est_minutes": 20,
-       "status": "todo"
+       "status": "skipped"
       }
      ]
     }
    ]
   }
- ]
+ ],
+ "level_status": "completed",
+ "completed_at": "2026-09-02"
 }

@@ -1,8 +1,12 @@
 import os, uuid
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from . import config  # noqa: F401
+from .auth import get_user_id
+from .db import db
+from .limits import get_limit_info
+from .turn import prepare_call
 
 router = APIRouter()
 DEEPGRAM_GRANT_URL = "https://api.deepgram.com/v1/auth/grant"
@@ -34,8 +38,38 @@ class CallStartRequest(BaseModel):
 
 
 @router.post("/api/call/start")
-async def call_start(req: CallStartRequest):
-    call_id = req.call_id or f"call-{uuid.uuid4().hex[:12]}"
+async def call_start(
+    req: CallStartRequest,
+    authorization: str | None = Header(default=None),
+    x_fingerprint: str | None = Header(default=None),
+    x_timezone: str | None = Header(default=None),
+):
+    is_new_call = req.call_id is None
+    call_id = req.call_id or str(uuid.uuid4())
+    user_id = await get_user_id(authorization)
+
+    info = await get_limit_info(user_id, x_fingerprint, x_timezone)
+    if not info.allowed:
+        raise HTTPException(403, detail={
+            "code": "limit",
+            "status": info.status,
+            "limits": {"left": info.left, "limit": info.limit, "used": info.used, "period": info.period},
+            "reason": info.reason,
+        })
+
+    entry = await prepare_call(call_id, user_id)
+    entry["fingerprint"] = x_fingerprint
+    entry["tz"] = x_timezone
+    entry["status"] = info.status
+    if is_new_call:
+        try:
+            insert_row = {"id": call_id, "user_id": entry["user_id"], "start_mood": entry["mood"]}
+            if entry["is_guest"]:
+                insert_row["guest_fp"] = x_fingerprint
+            await db.insert("calls", insert_row)
+        except Exception as e:
+            print(f"[calls] insert failed: {e!r}")
+    limits_payload = {"left": info.left, "limit": info.limit, "used": info.used, "period": info.period}
     try:
         tok = await grant_token()
     except HTTPException as exc:
@@ -46,7 +80,11 @@ async def call_start(req: CallStartRequest):
                 "deepgram_token": os.getenv("DEEPGRAM_API_KEY"),
                 "deepgram_auth": "token",
                 "deepgram_expires_in": None,
-                "limits": {"left": None, "period": None},  # level 4
+                "limits": limits_payload,
+                "status": info.status,
+                "day_event": entry["day_event"]["text"],
+                "mood": entry["mood"],
+                "is_guest": entry["is_guest"],
             }
         raise
     return {
@@ -54,5 +92,9 @@ async def call_start(req: CallStartRequest):
         "deepgram_token": tok["access_token"],
         "deepgram_auth": "bearer",
         "deepgram_expires_in": tok["expires_in"],
-        "limits": {"left": None, "period": None},  # level 4
+        "limits": limits_payload,
+        "status": info.status,
+        "day_event": entry["day_event"]["text"],
+        "mood": entry["mood"],
+        "is_guest": entry["is_guest"],
     }

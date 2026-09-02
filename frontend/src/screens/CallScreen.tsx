@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useCall } from '../call/useCall';
+import { useAuth } from '../auth/useAuth';
 import { Orb } from '../components/Orb';
 import { Chat } from '../components/Chat';
 import { LiveInput } from '../components/LiveInput';
+import { CallSummary } from '../components/CallSummary';
+import { AuthModal } from '../components/AuthModal';
+import { LimitModal } from '../components/LimitModal';
 import { Phone, PhoneOff, ChevronLeft } from '../components/Icons';
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || '';
@@ -20,8 +24,15 @@ export function CallScreen() {
     muted,
     toggleMute,
     micError,
+    summary,
+    dismissSummary,
+    limits,
+    limitHit,
+    dismissLimit,
   } = useCall();
+  const { user, signOut } = useAuth();
   const [panelOpen, setPanelOpen] = useState(false);
+  const [manualAuthOpen, setManualAuthOpen] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/warmup`).catch(() => {});
@@ -67,7 +78,35 @@ export function CallScreen() {
             <ChevronLeft className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-4 text-sm text-slate-300">Осталось: ∞</div>
+        <div className="px-4 text-sm text-slate-300 flex flex-col gap-1">
+          <span>
+            {limits === null || limits.left === null
+              ? 'Осталось: ∞'
+              : limits.period === 'day'
+                ? `Осталось сегодня: ${limits.left} из ${limits.limit}`
+                : `Осталось: ${limits.left} из ${limits.limit}`}
+          </span>
+          {limits ? (
+            <span className="text-xs text-slate-500">
+              {limits.status === 'guest' ? 'Гость' : limits.status === 'subscriber' ? 'Подписка' : 'Бесплатно'}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="absolute top-3 left-3 z-10 text-xs opacity-60 flex items-center gap-2">
+        {user ? (
+          <>
+            <span>{user.email}</span>
+            <button type="button" onClick={() => void signOut()} className="underline cursor-pointer">
+              Выйти
+            </button>
+          </>
+        ) : (
+          <button type="button" onClick={() => setManualAuthOpen(true)} className="underline cursor-pointer">
+            Войти
+          </button>
+        )}
       </div>
 
       {screen === 'idle' ? (
@@ -145,6 +184,40 @@ export function CallScreen() {
           </div>
         </>
       ) : null}
+
+      {summary && isIdle && !limitHit ? (
+        <CallSummary
+          data={summary}
+          onAgain={() => {
+            dismissSummary();
+            startCall();
+          }}
+          onClose={dismissSummary}
+        />
+      ) : null}
+
+      {limitHit ? (
+        limitHit.status === 'guest' || limits?.status === 'guest' ? (
+          <AuthModal
+            open
+            reason="guest_limit"
+            onClose={() => {
+              dismissLimit();
+              endCall();
+            }}
+          />
+        ) : (
+          <LimitModal
+            period={limits?.period ?? null}
+            onClose={() => {
+              dismissLimit();
+              endCall();
+            }}
+          />
+        )
+      ) : null}
+
+      <AuthModal open={manualAuthOpen} reason="manual" onClose={() => setManualAuthOpen(false)} />
     </div>
   );
 }

@@ -1,15 +1,20 @@
 import asyncio, json, random, time
 from pathlib import Path
 from typing import AsyncIterator, Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, Header
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from .llm import llm, split_sentences, DEFAULT_EMOTION
 from .tts import tts, to_b64, MIME
+from .auth import get_user_id
+from .state import CharlieState, load_state, load_memories, pick_day_event, start_mood, build_state_block
+from .usage import record_turn
+from .limits import check_rate, call_too_long, get_limit_info, increment_usage
+from .db import db
 
 router = APIRouter()
 
-LLM_FIRST_TOKEN_TIMEOUT_S = 5.0
+LLM_FIRST_TOKEN_TIMEOUT_S = 8.0
 HISTORY_MAX = 16
 
 _PROMPTS = Path(__file__).parent / "prompts"
@@ -65,12 +70,48 @@ FALLBACK_PHRASES: list[tuple[str, str]] = [
 _HISTORY: dict[str, list[dict]] = {}
 # last assistant reply per call, as the list of sentences actually sent (for spoken_upto trimming)
 _LAST_REPLY: dict[str, list[str]] = {}
+# per-call state entry: {"user_id", "is_guest", "day_event", "state", "mood", "mood_level", "memories"}
+_CALLS: dict[str, dict] = {}
+
+
+async def prepare_call(call_id: str, user_id: Optional[str]) -> dict:
+    is_guest = user_id is None
+    try:
+        if is_guest:
+            state = CharlieState()
+            memories: list[dict] = []
+            day_event = await pick_day_event(None)
+        else:
+            state = await load_state(user_id)
+            memories = await load_memories(user_id)
+            day_event = await pick_day_event(user_id)
+    except Exception as exc:
+        print(f"[state] db unavailable: {exc!r}")
+        state = CharlieState()
+        memories = []
+        emotion, text = random.choice(DAY_EVENTS)
+        day_event = {"id": None, "text": text, "mood_effect": emotion}
+
+    mood, mood_level = start_mood(state, day_event)
+    entry = {
+        "user_id": user_id,
+        "is_guest": is_guest,
+        "day_event": day_event,
+        "state": state,
+        "mood": mood,
+        "mood_level": mood_level,
+        "memories": memories,
+        "started_at": time.time(),
+    }
+    _CALLS[call_id] = entry
+    return entry
 
 
 class TurnRequest(BaseModel):
     text: str = ""
     call_id: str = "local"
     spoken_upto: Optional[int] = None   # number of audio chunks (seq) that fully played before the user interrupted
+    stt_sec: float = 0.0
 
 
 def _sse(event: str, data: dict) -> str:
@@ -78,7 +119,12 @@ def _sse(event: str, data: dict) -> str:
 
 
 @router.post("/api/turn")
-async def turn(req: TurnRequest):
+async def turn(
+    req: TurnRequest,
+    authorization: Optional[str] = Header(default=None),
+    x_fingerprint: Optional[str] = Header(default=None),
+    x_timezone: Optional[str] = Header(default=None),
+):
     call_id = req.call_id
 
     async def stream():
@@ -102,12 +148,60 @@ async def turn(req: TurnRequest):
         text = req.text.strip()
         is_greeting = not text
         system = {"role": "system", "content": SYSTEM_PROMPT}
-        if is_greeting:
-            messages = [system, {"role": "user", "content": greeting_instruction()}]
-        else:
+
+        entry = _CALLS.get(call_id)
+        if entry is None:
+            user_id = await get_user_id(authorization)
+            entry = await prepare_call(call_id, user_id)
+            entry["fingerprint"] = x_fingerprint
+            entry["tz"] = x_timezone
+
+        if not is_greeting:
             history.append({"role": "user", "content": text})
             del history[:-HISTORY_MAX]
-            messages = [system] + history
+
+        # 2b. rate limit / call length / message limit checks
+        if not check_rate(call_id):
+            yield _sse("error", {"code": "rate_limit"})
+            return
+
+        def _pop_user_message() -> None:
+            if not is_greeting and history and history[-1]["role"] == "user":
+                history.pop()
+
+        fallback_status = entry.get("status") or ("guest" if entry["is_guest"] else "registered")
+
+        if call_too_long(entry["started_at"]):
+            _pop_user_message()
+            yield _sse("limit", {"left": 0, "status": fallback_status, "reason": "call_length"})
+            yield _sse("done", {"usage": {"tokens_in": 0, "tokens_out": 0, "tts_chars": 0}})
+            return
+
+        is_last_reply = False
+        extra_rules: Optional[list[str]] = None
+
+        if not is_greeting:
+            info = await get_limit_info(entry["user_id"], entry.get("fingerprint"), entry.get("tz"))
+            entry["status"] = info.status
+            if info.left <= 0:
+                _pop_user_message()
+                yield _sse("limit", {"left": 0, "status": info.status, "reason": info.reason or "limit"})
+                yield _sse("done", {"usage": {"tokens_in": 0, "tokens_out": 0, "tts_chars": 0}})
+                return
+            if info.left == 1:
+                extra_rules = ["guest_last_reply"] if entry["is_guest"] else ["limit_last_reply"]
+                is_last_reply = True
+
+        block = build_state_block(
+            entry["state"], entry["memories"], entry["day_event"], entry["is_guest"],
+            entry["mood"], entry["mood_level"], extra_rules,
+        )
+        state_msg = {"role": "system", "content": block}
+
+        if is_greeting:
+            messages = [system, state_msg, {"role": "user", "content": greeting_instruction(entry["day_event"]["text"])}]
+        else:
+            messages = [system] + history[:-1] + [state_msg] + [history[-1]]
 
         # 3. LLM with first-token timeout
         agen = llm.stream_turn(messages)
@@ -120,6 +214,8 @@ async def turn(req: TurnRequest):
             return
 
         yield _sse("emotion", {"emotion": emotion})
+        if is_last_reply:
+            yield _sse("limit", {"left": 0, "status": entry["status"], "reason": "limit"})
 
         # 4. text + audio pipeline
         text_q: asyncio.Queue = asyncio.Queue()
@@ -184,6 +280,16 @@ async def turn(req: TurnRequest):
             _LAST_REPLY[call_id] = sentences
             u = llm.last_usage or {"tokens_in": 0, "tokens_out": 0}
             yield _sse("done", {"usage": {"tokens_in": u["tokens_in"], "tokens_out": u["tokens_out"], "tts_chars": tts_chars}})
+
+            await record_turn(
+                call_id, entry["user_id"], text, req.stt_sec, full, emotion,
+                u["tokens_in"], u["tokens_out"], tts_chars,
+            )
+            if text:
+                try:
+                    await increment_usage(entry["user_id"], entry.get("fingerprint"))
+                except Exception as exc:
+                    print(f"[turn] increment_usage failed: {exc!r}")
         finally:
             if not task1.done():
                 task1.cancel()
@@ -221,3 +327,12 @@ async def _fallback(call_id: str, is_greeting: bool):
 @router.get("/api/turn/debug/{call_id}")
 async def turn_debug(call_id: str):
     return {"history": _HISTORY.get(call_id, [])}
+
+
+@router.get("/api/usage/{call_id}")
+async def usage(call_id: str):
+    rows = await db.select(
+        "messages",
+        {"call_id": f"eq.{call_id}", "select": "*", "order": "created_at.asc"},
+    )
+    return {"messages": rows}

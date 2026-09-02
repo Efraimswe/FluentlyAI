@@ -2,6 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { unlockAudio, openMic } from '../audio/mic';
 import { Vad } from '../audio/vad';
 import { Stt } from '../audio/stt';
+import { authHeaders } from '../auth/supabase';
+import { getFingerprint } from '../guest/fingerprint';
+import type { CallSummaryData } from '../components/CallSummary';
+
+export type { CallSummaryData };
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || '';
 
@@ -40,6 +45,16 @@ interface TurnEventData {
   b64?: string;
   text?: string;
   code?: string;
+  status?: string;
+  reason?: string;
+  left?: number;
+}
+
+interface LimitsPayload {
+  left: number | null;
+  limit: number | null;
+  used?: number;
+  period: 'total' | 'day' | null;
 }
 
 interface CallStartResponse {
@@ -47,6 +62,25 @@ interface CallStartResponse {
   deepgram_token: string;
   deepgram_auth?: 'bearer' | 'token';
   deepgram_expires_in: number | null;
+  limits?: LimitsPayload;
+  status?: string;
+}
+
+interface MeResponse {
+  status?: string;
+  limits?: LimitsPayload;
+}
+
+export interface Limits {
+  left: number | null;
+  limit: number | null;
+  period: 'total' | 'day' | null;
+  status: string;
+}
+
+export interface LimitHit {
+  status: string;
+  reason: string;
 }
 
 /** setTimeout wrapped as a cancelable promise; the timer id is tracked in timersRef so a caller can clear it. */
@@ -69,9 +103,14 @@ export function useCall() {
   const [muted, setMuted] = useState<boolean>(false);
   const [micError, setMicError] = useState<boolean>(false);
   const [playing, setPlaying] = useState<Playing | null>(null);
+  const [summary, setSummary] = useState<CallSummaryData | null>(null);
+  const [limits, setLimits] = useState<Limits | null>(null);
+  const [limitHit, setLimitHit] = useState<LimitHit | null>(null);
 
   const callStateRef = useRef<CallState>('idle');
   const callIdRef = useRef<string>('local');
+  const callStartedAtRef = useRef<number | null>(null);
+  const transcriptsRef = useRef<TranscriptItem[]>([]);
 
   const abortRef = useRef<AbortController | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
@@ -96,14 +135,52 @@ export function useCall() {
   const playedCountRef = useRef<number>(0);
   const pendingSpokenUptoRef = useRef<number | null>(null);
 
+  const speechStartedAtRef = useRef<number | null>(null);
+
   const endingRef = useRef<boolean>(false);
   const reconnectTimersRef = useRef<Set<number>>(new Set());
   const reconnectingSttRef = useRef<boolean>(false);
   const reconnectSttRef = useRef<(() => void) | null>(null);
 
+  const fingerprintRef = useRef<string | null>(null);
+  const pendingLimitRef = useRef<LimitHit | null>(null);
+
+  const apiHeaders = useCallback(async (): Promise<Record<string, string>> => {
+    if (fingerprintRef.current === null) {
+      fingerprintRef.current = await getFingerprint();
+    }
+    return {
+      'Content-Type': 'application/json',
+      ...(await authHeaders()),
+      'X-Fingerprint': fingerprintRef.current,
+      'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone,
+    };
+  }, []);
+
+  const refreshLimits = useCallback(async () => {
+    try {
+      const headers = await apiHeaders();
+      const res = await fetch(`${API_BASE}/api/me`, { headers });
+      if (!res.ok) return;
+      const data = (await res.json()) as MeResponse;
+      setLimits({
+        left: data.limits?.left ?? null,
+        limit: data.limits?.limit ?? null,
+        period: data.limits?.period ?? null,
+        status: data.status ?? 'guest',
+      });
+    } catch {
+      // ignore, keep the previous limits
+    }
+  }, [apiHeaders]);
+
   useEffect(() => {
     callStateRef.current = callState;
   }, [callState]);
+
+  useEffect(() => {
+    transcriptsRef.current = transcripts;
+  }, [transcripts]);
 
   const updateAudioLevel = useCallback(function tick(): void {
     if (!analyserRef.current) return;
@@ -119,15 +196,33 @@ export function useCall() {
     animFrameRef.current = requestAnimationFrame(tick);
   }, []);
 
+  const applyLimitHit = useCallback((hit: LimitHit) => {
+    sttRef.current?.mute();
+    vadRef.current?.pause();
+    mutedRef.current = true;
+    setMuted(true);
+    setLimitHit(hit);
+  }, []);
+
+  const dismissLimit = useCallback(() => {
+    setLimitHit(null);
+  }, []);
+
   const finishSpeaking = useCallback(() => {
     setCallState('listening');
     setPlaying(null);
     vadRef.current?.setCharlieSpeaking(false);
+    if (pendingLimitRef.current) {
+      const hit = pendingLimitRef.current;
+      pendingLimitRef.current = null;
+      applyLimitHit(hit);
+      return;
+    }
     if (!mutedRef.current) {
       vadRef.current?.start();
       sttRef.current?.unmute();
     }
-  }, []);
+  }, [applyLimitHit]);
 
   const decodeAndSchedule = useCallback(
     async (b64: string, text: string, seq: number) => {
@@ -216,7 +311,7 @@ export function useCall() {
   }, []);
 
   const sendTurn = useCallback(
-    async (text: string) => {
+    async (text: string, sttSec = 0) => {
       abortRef.current?.abort();
       const ctrl = new AbortController();
       abortRef.current = ctrl;
@@ -232,13 +327,15 @@ export function useCall() {
       const spokenUpto = pendingSpokenUptoRef.current;
       pendingSpokenUptoRef.current = null;
 
+      const headers = await apiHeaders();
       const doFetch = () =>
         fetch(`${API_BASE}/api/turn`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             text,
             call_id: callIdRef.current,
+            stt_sec: Math.round(sttSec * 100) / 100,
             ...(spokenUpto !== null ? { spoken_upto: spokenUpto } : {}),
           }),
           signal: ctrl.signal,
@@ -311,20 +408,35 @@ export function useCall() {
               enqueueAudio(data.b64 ?? '', data.text ?? '', data.seq ?? 0);
             } else if (event === 'fallback') {
               console.warn('fallback');
+            } else if (event === 'limit') {
+              pendingLimitRef.current = {
+                status: data.status ?? limits?.status ?? 'guest',
+                reason: data.reason ?? 'limit',
+              };
             } else if (event === 'done') {
               queueChainRef.current = queueChainRef.current.then(() => {
                 streamDoneRef.current = true;
                 if (playingRef.current.length === 0) {
                   if (turnStartedRef.current) {
                     finishSpeaking();
+                  } else if (pendingLimitRef.current) {
+                    const hit = pendingLimitRef.current;
+                    pendingLimitRef.current = null;
+                    applyLimitHit(hit);
                   } else {
                     setCallState('listening');
                   }
                 }
               });
+              void refreshLimits();
             } else if (event === 'error') {
-              setCurrentCaption('Ошибка');
-              setCallState('listening');
+              if (data.code === 'rate_limit') {
+                setCurrentCaption('Слишком быстро, подожди секунду');
+                setCallState('listening');
+              } else {
+                setCurrentCaption('Ошибка');
+                setCallState('listening');
+              }
             }
           }
         }
@@ -337,11 +449,12 @@ export function useCall() {
         }
       }
     },
-    [enqueueAudio, finishSpeaking, retryFetch],
+    [enqueueAudio, finishSpeaking, retryFetch, apiHeaders, applyLimitHit, refreshLimits, limits],
   );
 
   const interruptTutor = useCallback(() => {
     pendingSpokenUptoRef.current = playedCountRef.current;
+    pendingLimitRef.current = null;
 
     const removeIds = new Set<string>();
     for (const [seq, state] of chunkStateRef.current) {
@@ -371,6 +484,7 @@ export function useCall() {
   }, [finishSpeaking]);
 
   const onSpeechStart = useCallback(() => {
+    speechStartedAtRef.current = performance.now();
     if (callStateRef.current === 'speaking') {
       interruptTutor();
     }
@@ -379,6 +493,8 @@ export function useCall() {
   const onSpeechEnd = useCallback(() => {
     const stt = sttRef.current;
     if (!stt) return;
+    const speechStartedAt = speechStartedAtRef.current;
+    const sttSec = speechStartedAt !== null ? (performance.now() - speechStartedAt) / 1000 : 0;
     void (async () => {
       const text = await stt.finalize();
       if (!text.trim()) return;
@@ -387,7 +503,7 @@ export function useCall() {
         { id: Math.random().toString(), speaker: 'user', text, timestamp: new Date() },
       ]);
       setCurrentCaption('');
-      sendTurn(text);
+      sendTurn(text, sttSec);
     })();
   }, [sendTurn]);
 
@@ -419,9 +535,10 @@ export function useCall() {
         if (endingRef.current) break;
       }
       try {
+        const headers = await apiHeaders();
         const res = await fetch(`${API_BASE}/api/call/start`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ call_id: callIdRef.current }),
         });
         if (!res.ok) throw new Error(`call/start failed: ${res.status}`);
@@ -464,7 +581,7 @@ export function useCall() {
       setCurrentCaption('Нет связи');
       setCallState('listening');
     }
-  }, [onInterim, handleSttClose]);
+  }, [onInterim, handleSttClose, apiHeaders]);
 
   useEffect(() => {
     reconnectSttRef.current = () => {
@@ -494,6 +611,7 @@ export function useCall() {
       setCurrentCaption('');
       setMicError(false);
       setPlaying(null);
+      setSummary(null);
       streamDoneRef.current = false;
       turnStartedRef.current = false;
       nextStartTimeRef.current = 0;
@@ -518,16 +636,31 @@ export function useCall() {
       let token: string;
       let auth: 'bearer' | 'token';
       try {
+        const headers = await apiHeaders();
         const res = await fetch(`${API_BASE}/api/call/start`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({}),
         });
+        if (res.status === 403) {
+          const body = (await res.json().catch(() => null)) as { detail?: LimitHit } | null;
+          mic.stop();
+          micRef.current = null;
+          setCallState('idle');
+          setLimitHit({ status: body?.detail?.status ?? 'guest', reason: body?.detail?.reason ?? 'limit' });
+          return;
+        }
         if (!res.ok) throw new Error(`call/start failed: ${res.status}`);
         const data = (await res.json()) as CallStartResponse;
         call_id = data.call_id;
         token = data.deepgram_token;
         auth = data.deepgram_auth ?? 'bearer';
+        setLimits({
+          left: data.limits?.left ?? null,
+          limit: data.limits?.limit ?? null,
+          period: data.limits?.period ?? null,
+          status: data.status ?? 'guest',
+        });
       } catch (err) {
         console.error('call/start failed:', err);
         setCurrentCaption('Сервер недоступен');
@@ -564,14 +697,27 @@ export function useCall() {
       window.addEventListener('offline', handleOffline);
       window.addEventListener('online', handleOnline);
 
+      callStartedAtRef.current = Date.now();
       setCallState('listening');
       sendTurn('');
     },
-    [onInterim, onSpeechStart, onSpeechEnd, updateAudioLevel, sendTurn, handleSttClose, handleOffline, handleOnline],
+    [onInterim, onSpeechStart, onSpeechEnd, updateAudioLevel, sendTurn, handleSttClose, handleOffline, handleOnline, apiHeaders],
   );
 
   const endCall = useCallback(() => {
+    const durationS = callStartedAtRef.current
+      ? Math.max(0, Math.round((Date.now() - callStartedAtRef.current) / 1000))
+      : 0;
+    const endReason = callStateRef.current === 'speaking' ? 'user_hung_up_mid_story' : 'normal';
+    const snapshotTranscripts = transcriptsRef.current.map((item) => ({
+      role: item.speaker === 'user' ? 'user' : 'assistant',
+      text: item.text,
+    }));
+    const snapshotEmotion = emotionRef.current as Emotion;
+    const callId = callIdRef.current;
+
     endingRef.current = true;
+    pendingLimitRef.current = null;
     for (const id of reconnectTimersRef.current) window.clearTimeout(id);
     reconnectTimersRef.current.clear();
     reconnectingSttRef.current = false;
@@ -605,7 +751,46 @@ export function useCall() {
     setEmotion('calm');
     mutedRef.current = false;
     setMuted(false);
-  }, [handleOffline, handleOnline]);
+    callStartedAtRef.current = null;
+
+    if (snapshotTranscripts.length > 0) {
+      setSummary({ durationS, mood: snapshotEmotion, praise: null, loading: true });
+      void (async () => {
+        try {
+          const headers = await apiHeaders();
+          const res = await fetch(`${API_BASE}/api/call/end`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              call_id: callId,
+              duration_s: durationS,
+              end_reason: endReason,
+              transcript: snapshotTranscripts,
+            }),
+          });
+          if (!res.ok) throw new Error(`call/end failed: ${res.status}`);
+          const data = (await res.json()) as { summary?: { mood?: string; praise?: string | null } };
+          setSummary((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  mood: (data.summary?.mood as Emotion | undefined) ?? prev.mood,
+                  praise: data.summary?.praise ?? null,
+                  loading: false,
+                }
+              : prev,
+          );
+        } catch (err) {
+          console.error('call/end failed:', err);
+          setSummary((prev) => (prev ? { ...prev, loading: false } : prev));
+        }
+      })();
+    }
+  }, [handleOffline, handleOnline, apiHeaders]);
+
+  const dismissSummary = useCallback(() => {
+    setSummary(null);
+  }, []);
 
   const toggleMute = useCallback(() => {
     setMuted((prev) => {
@@ -637,5 +822,10 @@ export function useCall() {
     muted,
     toggleMute,
     micError,
+    summary,
+    dismissSummary,
+    limits,
+    limitHit,
+    dismissLimit,
   };
 }

@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import HOST, PORT
 from .turn import router as turn_router
 from .deepgram_token import router as deepgram_router
+from .postcall import router as postcall_router
+from .limits import router as limits_router
 
 app = FastAPI(title="FluentlyAI API", version="3.0.0")
 
@@ -16,6 +18,8 @@ app.add_middleware(
 
 app.include_router(turn_router)
 app.include_router(deepgram_router)
+app.include_router(postcall_router)
+app.include_router(limits_router)
 
 @app.get("/health")
 async def health_check():

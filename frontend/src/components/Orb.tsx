@@ -10,6 +10,16 @@ export interface OrbProps {
   onToggleMute(): void;
 }
 
+export const EMOTION_COLORS: Record<Emotion, string> = {
+  calm: '#7dd3fc',
+  happy: '#fbbf24',
+  angry: '#ef4444',
+  offended: '#6d28d9',
+  sad: '#64748b',
+  flirty: '#f472b6',
+  ashamed: '#e9a3b5',
+};
+
 interface EmotionStyle {
   core: string;
   glow: string;
@@ -17,13 +27,13 @@ interface EmotionStyle {
 }
 
 const EMOTION_STYLES: Record<Emotion, EmotionStyle> = {
-  calm: { core: '#7dd3fc', glow: '#38bdf8', duration: '2.4s' },
-  happy: { core: '#fbbf24', glow: '#f59e0b', duration: '1.2s' },
-  angry: { core: '#ef4444', glow: '#dc2626', duration: '0.5s' },
-  offended: { core: '#6d28d9', glow: '#4c1d95', duration: '3.2s' },
-  sad: { core: '#64748b', glow: '#475569', duration: '5s' },
-  flirty: { core: '#f472b6', glow: '#ec4899', duration: '1.8s' },
-  ashamed: { core: '#e9a3b5', glow: '#d48aa0', duration: '2.8s' },
+  calm: { core: EMOTION_COLORS.calm, glow: '#38bdf8', duration: '2.4s' },
+  happy: { core: EMOTION_COLORS.happy, glow: '#f59e0b', duration: '1.2s' },
+  angry: { core: EMOTION_COLORS.angry, glow: '#dc2626', duration: '0.5s' },
+  offended: { core: EMOTION_COLORS.offended, glow: '#4c1d95', duration: '3.2s' },
+  sad: { core: EMOTION_COLORS.sad, glow: '#475569', duration: '5s' },
+  flirty: { core: EMOTION_COLORS.flirty, glow: '#ec4899', duration: '1.8s' },
+  ashamed: { core: EMOTION_COLORS.ashamed, glow: '#d48aa0', duration: '2.8s' },
 };
 
 export function Orb({ emotion, speaking, thinking, audioLevel, muted, onToggleMute }: OrbProps) {

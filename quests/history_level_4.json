@@ -1,8 +1,146 @@
 [
-  {
-    "timestamp": "2026-08-28T17:17:13.087661Z",
-    "type": "PROJECT_INIT",
-    "title": "Инициализация Уровня 4: Level 4: Чарли помнит — Supabase, память, состояние, гость, лимиты",
-    "details": "Сгенерировано из master_functional.md v1 + master_technical.md v1. Тасок: 8, микро-шагов: 22."
-  }
+ {
+  "timestamp": "2026-08-28T17:17:13.087661Z",
+  "type": "PROJECT_INIT",
+  "title": "Инициализация Уровня 4: Level 4: Чарли помнит — Supabase, память, состояние, гость, лимиты",
+  "details": "Сгенерировано из master_functional.md v1 + master_technical.md v1. Тасок: 8, микро-шагов: 22."
+ },
+ {
+  "timestamp": "2026-09-02T21:11:12.258012+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-01-STEP-01: Supabase-проект charlie-calls (ref uurnwxdyablxewgytick, eu-central-1 Frankfurt) создан через Management API; URL/anon/service_role/db-password в backend/.env",
+  "details": "Google OAuth включён в Supabase auth (client id/secret от Efraim), redirect на localhost:5173 и fluently-ai.vercel.app. Приложение в Google пока в Testing — нужно Publish app."
+ },
+ {
+  "timestamp": "2026-09-02T21:11:12.258012+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-01-STEP-02: supabase/migrations/0001_init.sql — 14 таблиц по тех-спеке §6 + RLS (select своё для юзера, service_role пишет), view v_daily_margin",
+  "details": "Применено через Management API /database/query. Все таблицы rowsecurity=true, 12 select-политик; guests и provider_rates — только сервер."
+ },
+ {
+  "timestamp": "2026-09-02T21:11:12.258012+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-01-STEP-03: supabase/seed.sql — limits (4), plans (monthly €9.99, trial 3 дня), provider_rates (4), fallback_phrases (15), day_events (30, суммарный вес 63)",
+  "details": "truncate day_events cascade — user_day_event была пустая."
+ },
+ {
+  "timestamp": "2026-09-02T21:16:23.098701+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-02-STEP-01: app/db.py (PostgREST, service_role), app/auth.py (Bearer → Supabase /auth/v1/user, кэш 60 с, upsert users), app/state.py (load_state, load_memories, build_state_block); блок [STATE]/[MEMORY]/[RULES NOW] вставляется после истории перед последней репликой",
+  "details": "Шаблон prompts/state_block.md + правила prompts/state_rules.md (по mood, attention low/mid/high, relationship new/warming up/close, first_call_guest). /api/call/start и /api/turn принимают Authorization; гость — без памяти, с блоком. При падении Supabase — дефолты и событие из файла, звонок не ломается."
+ },
+ {
+  "timestamp": "2026-09-02T21:16:23.098701+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-02-STEP-02: событие дня — выбор раз в день по весам (user_day_event), гостю рандом без записи; стартовое настроение по §1.6: обида держится, настроение <24 ч держится, иначе mood_effect события; приветствие получает событие",
+  "details": "Тест scripts/test_state.py: юзер с обидой «бросил трубку посреди истории» → приветствие [offended] «You finally call back after hanging up on me?», после извинения → calm и рассказ про дождь в баре (событие дня). Гость → is_guest True."
+ },
+ {
+  "timestamp": "2026-09-02T21:16:23.098701+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-02-STEP-03: счётчик внимания → [RULES NOW] (low <4: больше о себе; mid; high: отдаёт слово)",
+  "details": "Замечание: память (имя Efraim, обещание про собес) в блок попадает, но в 3 коротких репликах модель её не упомянула — поведение, не проводка. Обновление attention — в post-call (TASK-03)."
+ },
+ {
+  "timestamp": "2026-09-02T21:23:14.020112+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-03-STEP-01: app/postcall.py — POST /api/call/end: промпт prompts/postcall.md + диалог → JSON (mood, mood_level, attention, relationship, offended_reason, new_memories, call_summary, praise_for_user), таймаут 12 с, безопасный фолбэк",
+  "details": "Не фоном, а в самом запросе: на Vercel фоновые задачи после ответа не гарантированы. Модалка на фронте показывается сразу, похвала дозагружается когда придёт ответ."
+ },
+ {
+  "timestamp": "2026-09-02T21:23:14.020112+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-03-STEP-02: запись в charlie_state (upsert), memories (дедуп по content), calls (строка создаётся в /api/call/start с start_mood, закрывается в /api/call/end: ended_at, duration_s, end_mood, summary, praise); call_id теперь uuid",
+  "details": "Тест scripts/test_postcall.py: бросил трубку посреди истории → mood offended, память про собес записана, calls.ended_at есть. ALL PASS."
+ },
+ {
+  "timestamp": "2026-09-02T21:23:14.020112+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-03-STEP-03: frontend CallSummary.tsx — модалка: длительность mm:ss, настроение Чарли (точка цветом эмоции + слово), похвала (скелетон пока грузится), «Ещё раз», закрыть; EMOTION_COLORS вынесены из Orb.tsx",
+  "details": "useCall: summary/dismissSummary, end_reason=user_hung_up_mid_story если положил трубку пока Чарли говорил."
+ },
+ {
+  "timestamp": "2026-09-02T21:35:26.552638+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-04-STEP-01: app/usage.py — record_turn после done: две строки messages (user с stt_sec, assistant с tokens/tts_chars/emotion), cost_cents по provider_rates (кэш); фронт шлёт stt_sec = длительность речи по VAD",
+  "details": "Грабли PostgREST: bulk insert требует одинаковые ключи у всех строк и NOT NULL-колонки → нули вместо null. GET /api/usage/{call_id} для проверки."
+ },
+ {
+  "timestamp": "2026-09-02T21:35:26.552638+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-04-STEP-02: usage_daily инкремент после done (user), view v_daily_margin. Тест scripts/test_usage.py ALL PASS",
+  "details": "Замечено: при параллельных тестах LLM иногда не укладывается в 5 с до первого токена → fallback. Таймаут поднять до 8 с при сшивке."
+ },
+ {
+  "timestamp": "2026-09-02T21:35:26.552638+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-05-STEP-02 (бэк): users создаётся при первом входе — auth.ensure_user (upsert id/email, status registered) при первой проверке токена",
+  "details": ""
+ },
+ {
+  "timestamp": "2026-09-02T21:35:26.552638+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-05-STEP-01 (фронт, без подключения): src/auth/supabase.ts (supabase-js, PKCE), useAuth.ts, components/AuthModal.tsx — Google + magic link; VITE_SUPABASE_URL/ANON в .env и на Vercel",
+  "details": "JWT-проверка на бэке уже есть (auth.py). Подключение к useCall/CallScreen — в сшивке."
+ },
+ {
+  "timestamp": "2026-09-02T21:35:26.552638+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-06-STEP-01: frontend/src/guest/fingerprint.ts — sha256(UA+screen+tz+lang+WebGL+canvas), кука cc_fp + localStorage; бэк app/limits.py — guests upsert, LimitInfo, get_limit_info, increment_usage",
+  "details": ""
+ },
+ {
+  "timestamp": "2026-09-02T21:35:26.552638+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-07 (ядро, без подключения): app/limits.py — лимиты по таблице limits (total/day, tz юзера), дневной бюджет гостей GUEST_DAILY_BUDGET_CENTS=300, rate limit 20/мин на call_id, CALL_MAX_S=900, GET /api/me; всё fail-open при падении БД. Тест scripts/test_limits.py PASS",
+  "details": ""
+ },
+ {
+  "timestamp": "2026-09-02T21:46:29.983751+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-05-STEP-01: auth подключена — useCall шлёт Authorization + X-Fingerprint + X-Timezone во все запросы; CallScreen: «Войти»/email+«Выйти», AuthModal (Google, magic link)",
+  "details": "Google-приложение в Testing: до Publish app войти могут только тестовые юзеры."
+ },
+ {
+  "timestamp": "2026-09-02T21:46:29.983751+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-06-STEP-02: последняя реплика гостя — правило guest_last_reply в [RULES NOW]: ответ + незакрытый ход + «зарегистрируйся» в характере; событие limit сразу после emotion",
+  "details": ""
+ },
+ {
+  "timestamp": "2026-09-02T21:46:29.983751+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-06-STEP-03: после озвучки последней реплики → микрофон off (stt.mute + vad.pause) → AuthModal reason=guest_limit; закрытие → endCall → CallSummary. Тест scripts/test_guest_flow.py: 10/10 PASS (2 реплики → крючок → 3-я: limit без audio → /api/me left 0 → повторный call/start 403)",
+  "details": ""
+ },
+ {
+  "timestamp": "2026-09-02T21:46:29.983751+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-07-STEP-01: проверка лимита до LLM в /api/turn по limits (total/day, tz юзера); left==1 → последняя реплика; left<=0 → limit + done без LLM; call/start при исчерпанном лимите → 403 code=limit",
+  "details": "Приветствие не считается. Таймаут первого токена LLM поднят до 8 с."
+ },
+ {
+  "timestamp": "2026-09-02T21:46:29.983751+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-07-STEP-02: лимит посреди звонка — правило limit_last_reply (Чарли сворачивает разговор в характере, упоминает подписку) → LimitModal «На сегодня всё» / «Бесплатные сообщения закончились» → endCall",
+  "details": "Подписка — уровень 5, пока текст-заглушка."
+ },
+ {
+  "timestamp": "2026-09-02T21:46:29.983751+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-07-STEP-03: подключены дневной бюджет гостей (GUEST_DAILY_BUDGET_CENTS=300 → reason guest_budget), rate limit 20/мин на call_id (error rate_limit), длина звонка 15 мин (reason call_length)",
+  "details": ""
+ },
+ {
+  "timestamp": "2026-09-02T21:46:29.983751+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-07-STEP-04: шеврон показывает реальный остаток из /api/me (обновляется после каждого done): «Осталось: N из M» / «Осталось сегодня», статус Гость/Бесплатно/Подписка",
+  "details": ""
+ },
+ {
+  "timestamp": "2026-09-02T21:49:07.070455+00:00",
+  "type": "STEP_DONE",
+  "title": "TASK-08-STEP-02: гость упирается в 2 (scripts/test_guest_flow.py 10/10), зарегистрированный — в 10 (scripts/test_registered_limit.py ALL PASS: 10-я реплика с прощанием, 11-я блокируется, /api/me used 10 left 0, call/end работает)",
+  "details": "STEP-01 (обида со вчера голосом, два звонка) — руками Efraim после деплоя."
+ }
 ]
